@@ -1,0 +1,37 @@
+# Setup GAS + Google Sheets (Tahap 1)
+
+## 1. Buat Sheets milik perusahaan
+1. Masuk ke Google Drive akun resmi perusahaan. Buat Google Sheets: `SYNERGY_WEBSITE_DB`.
+2. Dari Sheets pilih **Extensions / Ekstensi → Apps Script**.
+3. Ganti isi `Code.gs` di Apps Script dengan isi file `gas/Code.gs` ini.
+4. Simpan. Pilih fungsi **setupSynergySpreadsheet**, klik **Run / Jalankan** sekali. Berikan izin yang diminta Google.
+5. Akan dibuat tab `site`, `programs`, `gallery`, `registrations`. Fungsi ini hanya membuat tab yang belum ada dan **tidak menimpa tab lama**.
+
+## 2. Publikasikan konten
+- Ubah nilai pada tab `site` untuk teks profil, kontak, dan judul.
+- Pada kolom `published`, pakai checkbox TRUE agar baris tampil publik.
+- Foto memakai `image_url` dari tempat penyimpanan gambar publik berbasis HTTPS.
+- `registrations` **PRIVATE**, tidak boleh dibagikan ke publik. Belum ada form pendaftaran pada Tahap 1.
+
+## 3. Deploy Apps Script
+1. Klik **Deploy → New deployment → Web app**.
+2. **Execute as:** Me (akun perusahaan pemilik Sheets).
+3. **Who has access:** Anyone (termasuk tanpa login), karena endpoint ini hanya mengembalikan **konten yang sudah dipublikasikan**.
+4. Klik **Deploy**, setujui izin, salin URL yang berakhir `/exec`.
+5. Tes: `<URL_EXEC>?resource=health` → seharusnya ada `"ok":true`.
+6. Tes: `<URL_EXEC>?resource=public` → terlihat JSON `site`, `programs`, dan `gallery`.
+
+**Penting:** Jangan menambahkan endpoint menulis, edit, menghapus, login admin, atau data pendaftar ke deployment GAS publik ini. Untuk tahap admin kita buat kanal terpisah dengan autentikasi dan otorisasi.
+
+## 4. Sambungkan Next.js
+- Copy `.env.example` menjadi `.env.local` di folder proyek.
+- Isi `GAS_WEB_APP_URL=https://script.google.com/macros/s/.../exec`
+- Restart Next.js (`Ctrl+C`, jalankan `npm.cmd run dev` lagi).
+- Konten website server-side di-cache/di-revalidasi sekitar 5 menit. Pembaruan Sheets tidak selalu langsung muncul.
+- Jika Apps Script tidak bisa diakses, website menggunakan konten demo bawaan sebagai cadangan. Sebelum live, ganti demo ini dengan konten final yang sudah divalidasi.
+
+## Keamanan dan biaya
+- Jangan mengaktifkan `Share → Anyone with link` untuk Google Sheets itu sendiri. Yang publik hanyalah API konten terpilih.
+- Jangan simpan password, akses admin, PIN, atau data sensitif pada tab `site`, `programs`, `gallery`.
+- GAS memiliki kuota harian dan batas waktu eksekusi; bukan database relasional atau SLA uptime 100%.
+- Hosting Next.js yang mendukung server rendering/ISR diperlukan untuk cara integrasi yang diberikan. Vercel Hobby tidak untuk website bisnis komersial; gunakan layanan hosting yang memperbolehkan pemakaian komersial.
