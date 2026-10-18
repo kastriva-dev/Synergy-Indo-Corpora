@@ -1,3 +1,4 @@
+import { isApprovedMediaUrl } from "@/lib/media-url";
 export type Program = {
   id: string;
   title: string;
@@ -53,8 +54,7 @@ function safeString(value: unknown, fallback: string): string {
   return typeof value === "string" && value.trim().length > 0 ? value.slice(0, 600) : fallback;
 }
 function isImageUrl(value: unknown): value is string {
-  if (typeof value !== "string" || value.length > 500) return false;
-  try { const url = new URL(value); return url.protocol === "https:"; } catch { return false; }
+  return isApprovedMediaUrl(value);
 }
 function coerceItems<T extends Program | GalleryItem>(items: unknown, fallbacks: T[]): T[] {
   if (!Array.isArray(items)) return fallbacks;

@@ -1,0 +1,24 @@
+import { NextRequest, NextResponse } from "next/server";
+import { SESSION_COOKIE, NONCE_COOKIE, cookieSettings, createSessionToken, sameOrigin, verifyGoogleCredential, SESSION_SECONDS } from "@/lib/admin/auth";
+
+export const runtime = "nodejs";
+
+export async function POST(request: NextRequest) {
+  if (!sameOrigin(request)) return NextResponse.json({ error: "Origin tidak sah." }, { status: 403 });
+  const nonce = request.cookies.get(NONCE_COOKIE)?.value;
+  if (!nonce) return NextResponse.json({ error: "Sesi login kedaluwarsa. Muat ulang halaman." }, { status: 400 });
+  try {
+    const raw = await request.text();
+    if (raw.length > 20000) return NextResponse.json({ error: "Payload terlalu besar." }, { status: 413 });
+    const { credential } = JSON.parse(raw) as { credential?: string };
+    if (typeof credential !== "string") return NextResponse.json({ error: "Kredensial Google diperlukan." }, { status: 400 });
+    const { email, sub } = await verifyGoogleCredential(credential, nonce);
+    const res = NextResponse.json({ ok: true, email }, { headers: { "Cache-Control": "no-store" } });
+    res.cookies.set(SESSION_COOKIE, createSessionToken(email, sub), { ...cookieSettings, maxAge: SESSION_SECONDS });
+    res.cookies.delete(NONCE_COOKIE);
+    return res;
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Login gagal.";
+    return NextResponse.json({ error: message }, { status: 401 });
+  }
+}

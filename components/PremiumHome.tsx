@@ -5,6 +5,7 @@ import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { ArrowDown, ArrowDownRight, ArrowLeft, ArrowRight, ArrowUpRight, Menu, MousePointer2, MoveUpRight, X } from "lucide-react";
 import type { PublicContent } from "@/lib/content";
+import SafeMediaImage from "@/components/media/SafeMediaImage";
 
 const heroPhoto = "https://images.unsplash.com/photo-1504917595217-d4dc5ebe6122?auto=format&fit=crop&w=2100&q=85";
 const steps = [
@@ -184,7 +185,7 @@ export default function PremiumHome({ content }: { content: PublicContent }) {
         <div className="cards-track" ref={trackRef} aria-label="Daftar program pelatihan, bisa digeser horizontal">
           {content.programs.map((program, index) => (
             <article className="program-card tilt-card" key={program.id} data-cursor="EXPLORE">
-              <div className="program-image"><img src={program.image_url || "/hero-grid.svg"} alt={`Ilustrasi ${program.title}`} loading="lazy"/><div className="program-image-overlay"/></div>
+              <div className="program-image"><SafeMediaImage src={program.image_url} alt={`Ilustrasi ${program.title}`}/><div className="program-image-overlay"/></div>
               <div className="card-upper"><span>{String(index+1).padStart(2,"0")} / {String(content.programs.length).padStart(2,"0")}</span><MoveUpRight size={19}/></div>
               <div className="card-lower"><div className="card-category"><span className="live-dot"/>{program.category}</div><h3>{program.title}</h3><p>{program.description}</p><div className="card-footer">{program.duration}<ArrowUpRight size={17}/></div></div>
               <div className="tilt-shine"/>
@@ -203,7 +204,7 @@ export default function PremiumHome({ content }: { content: PublicContent }) {
       </section>
 
       <section className="gallery-section" id="galeri"><div className="container"><div className="section-head" data-reveal><div className="section-overline"><span>04 — GALERI KEGIATAN</span><span className="overline-right">MOMENTS THAT MATTER</span></div><div className="line-rule" data-line/></div><div className="gallery-heading"><h2 className="display-heading" data-reveal>MOMEN KECIL.<br/><span className="accent">DAMPAK BESAR.</span></h2><p data-reveal>Setiap langkah layak diceritakan. Galeri ini masih menggunakan foto ilustrasi dan akan diganti dengan dokumentasi resmi LPK.</p></div></div>
-        <div className="gallery-grid container" data-reveal>{content.gallery.map((item, index) => <div className="gallery-card" key={item.id} data-cursor="VIEW"><img src={item.image_url || "/hero-grid.svg"} alt={`Ilustrasi ${item.title}`} loading="lazy"/><div className="gallery-shade"/><span className="gallery-index">0{index + 1}</span><div className="gallery-caption"><small>{item.category}</small><h3>{item.title}</h3></div><div className="gallery-cross">+</div></div>)}</div>
+        <div className="gallery-grid container" data-reveal>{content.gallery.map((item, index) => <div className="gallery-card" key={item.id} data-cursor="VIEW"><SafeMediaImage src={item.image_url} alt={`Ilustrasi ${item.title}`}/><div className="gallery-shade"/><span className="gallery-index">0{index + 1}</span><div className="gallery-caption"><small>{item.category}</small><h3>{item.title}</h3></div><div className="gallery-cross">+</div></div>)}</div>
       </section>
 
       <section className="contact-section" id="hubungi"><div className="contact-backdrop"/><div className="container contact-content"><div className="section-head" data-reveal><div className="section-overline"><span>05 — HUBUNGI KAMI</span><span className="overline-right">LET'S BUILD YOUR NEXT STEP</span></div><div className="line-rule" data-line/></div><div className="contact-main"><span className="tiny-label" data-reveal>YOUR JOURNEY STARTS HERE.</span><h2 data-reveal>WAKTUNYA<br/><em>MELANGKAH.</em></h2><div className="contact-action" data-reveal>{whatsAppUrl ? arrowLink(whatsAppUrl, "MULAI PERCAKAPAN", "pill-button pill-primary") : <span className="contact-awaiting">Informasi WhatsApp resmi segera tersedia.</span>}{email ? <a className="contact-email" href={`mailto:${email}`}>{email}</a> : <span className="contact-email">Kontak resmi akan dilengkapi.</span>}</div></div></div></section>
