@@ -30,24 +30,46 @@ export default function AdminDashboard({ email, initial, backendReady }: { email
   const [working, setWorking] = useState(false);
   const [notice, setNotice] = useState("");
   const [failure, setFailure] = useState("");
-  const canWrite = backendReady && initial.source === "gas";
+  // Never allow mutations on the basis of environment variables alone.
+  // Only a successful, validated admin API read unlocks the editor.
+  const backendConfigured = backendReady && initial.source === "gas";
+  const [adminLoad, setAdminLoad] = useState<"loading" | "ready" | "failed">(
+    backendConfigured ? "loading" : "failed"
+  );
+  const canWrite = backendConfigured && adminLoad === "ready";
 
   useEffect(() => {
-    if (!canWrite) return;
+    if (!backendConfigured) {
+      setAdminLoad("failed");
+      return;
+    }
+    setAdminLoad("loading");
     let cancelled = false;
     fetch("/api/admin/content", { cache: "no-store" }).then(async (res) => {
       const result = await res.json();
       if (!res.ok || !result.ok) throw new Error(result.error || "Tidak dapat membaca data admin.");
-      if (!cancelled && result.data) {
+      if (!result.data || !result.data.site || typeof result.data.site !== "object" ||
+          Array.isArray(result.data.site) || !Array.isArray(result.data.programs) ||
+          !Array.isArray(result.data.gallery)) {
+        throw new Error("Format data admin tidak valid.");
+      }
+      if (!cancelled) {
         if (result.data.site) setSite(prev => ({ ...prev, ...result.data.site }));
         if (Array.isArray(result.data.programs)) setPrograms(result.data.programs);
         if (Array.isArray(result.data.gallery)) setGallery(result.data.gallery);
+        setAdminLoad("ready");
       }
-    }).catch(() => { if (!cancelled) setFailure("Data privat admin tidak dapat dimuat. Jangan menyimpan sebelum koneksi GAS admin tersedia."); });
+    }).catch(() => {
+      if (!cancelled) {
+        setAdminLoad("failed");
+        setFailure("Data privat admin gagal diverifikasi. Fitur simpan dinonaktifkan sampai API Admin berhasil.");
+      }
+    });
     return () => { cancelled = true; };
-  }, [canWrite]);
+  }, [backendConfigured]);
 
   async function save(action: "update_site" | "upsert_program" | "upsert_gallery", data: unknown): Promise<boolean> {
+    if (!canWrite) { setFailure("Koneksi API Admin belum berhasil diverifikasi. Penyimpanan diblokir."); return false; }
     setNotice(""); setFailure(""); setWorking(true);
     try {
       const res = await fetch("/api/admin/content", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action, data }) });
@@ -60,6 +82,7 @@ export default function AdminDashboard({ email, initial, backendReady }: { email
   }
 
   async function uploadImage(file: File, target: "program" | "gallery") {
+    if (!canWrite) { setFailure("Koneksi API Admin belum berhasil diverifikasi. Upload diblokir."); return; }
     setFailure(""); setNotice(""); setWorking(true);
     try {
       if (!/^image\/(jpeg|png|webp)$/.test(file.type) || file.size > 2_200_000) throw new Error("Gunakan JPG, PNG, atau WEBP maksimal 2,2 MB.");
@@ -92,7 +115,7 @@ export default function AdminDashboard({ email, initial, backendReady }: { email
     <main className="admin-main">
       <div className="admin-topbar"><span>SYNERGY / ADMIN PANEL <b>/</b> {nav.find(n=>n.key===tab)?.label.toUpperCase()}</span><a href="/" target="_blank" rel="noreferrer">LIHAT WEBSITE <ArrowUpRight size={16}/></a></div>
       <header className="admin-main-head"><span className="admin-eyebrow">✳ &nbsp; SITE MANAGEMENT / 2026</span><h1>{({overview:"CONTROL CENTER",site:"COMPANY PROFILE",programs:"TRAINING PROGRAMS",gallery:"MEDIA GALLERY"} as Record<Tab,string>)[tab]}<em>.</em></h1><p>Kelola konten website Synergy Indo Corpora dengan aman tanpa mengubah source code atau animasi.</p></header>
-      <div className={`admin-status ${canWrite ? "good" : "bad"}`}><ShieldCheck size={18}/><span>{canWrite ? "Sumber konten terhubung ke GAS dan konfigurasi penulisan tersedia." : "Mode baca saja — konfigurasi API GAS admin belum lengkap, atau website masih menampilkan fallback demo."}</span></div>
+      <div className={`admin-status ${canWrite ? "good" : "bad"}`}><ShieldCheck size={18}/><span>{canWrite ? "Koneksi GAS Admin sudah diuji dan editor siap menyimpan." : adminLoad === "loading" ? "Memverifikasi koneksi dan data privat GAS Admin — tombol Simpan dikunci." : "Mode baca saja — API Admin belum terverifikasi. Periksa login, konfigurasi GAS, dan status database."}</span></div>
       {notice && <div className="admin-alert success" role="status">{notice}</div>}
       {failure && <div className="admin-alert danger" role="alert">{failure}</div>}
       {tab === "overview" && <section className="admin-overview"><div className="admin-stat"><small>01 / PROGRAM</small><strong>{programs.filter(p=>p.published).length.toString().padStart(2,"0")}</strong><span>Program terpublikasi</span></div><div className="admin-stat"><small>02 / MEDIA</small><strong>{gallery.filter(g=>g.published).length.toString().padStart(2,"0")}</strong><span>Foto galeri terpublikasi</span></div><div className="admin-stat"><small>03 / DATA SOURCE</small><strong className="admin-source">{initial.source.toUpperCase()}</strong><span>Sumber halaman saat ini</span></div><div className="admin-intro"><span className="admin-eyebrow">WORKSPACE / SYNERGY</span><h2>Konten perusahaan.<br/><em>Di satu tempat.</em></h2><p>Perbarui profil, katalog pelatihan, dan dokumentasi. Konten publik memerlukan beberapa menit untuk memperbarui cache. Pendaftaran calon peserta belum dibuka pada tahap ini.</p><button className="admin-primary" onClick={()=>setTab("site")}>MULAI KELOLA KONTEN <ArrowUpRight size={17}/></button></div></section>}
