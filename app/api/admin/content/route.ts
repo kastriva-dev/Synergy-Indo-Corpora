@@ -1,6 +1,7 @@
 import { isApprovedMediaUrl } from "@/lib/media-url";
 import { NextRequest, NextResponse } from "next/server";
 import { getAdminSession, sameOrigin } from "@/lib/admin/auth";
+import { checkRateLimit, rateLimitResponse } from "@/lib/admin/rate-limit";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -48,8 +49,13 @@ async function callAdminGas(payload: Record<string, unknown>) {
   return result;
 }
 
-export async function GET() {
-  if (!(await getAdminSession())) return NextResponse.json({ error: "Login diperlukan." }, { status: 401 });
+export async function GET(request: NextRequest) {
+  const session = await getAdminSession();
+  if (!session) return NextResponse.json({ error: "Login diperlukan." }, { status: 401 });
+
+  const blocked = rateLimitResponse(await checkRateLimit(request, "content-read", 60, 60, session.email));
+  if (blocked) return blocked;
+
   try {
     const result = await callAdminGas({ action: "read_content" });
     return NextResponse.json({ ok: true, data: result.data }, { headers: { "Cache-Control": "no-store" } });
@@ -62,6 +68,10 @@ export async function POST(request: NextRequest) {
   const session = await getAdminSession();
   if (!session) return NextResponse.json({ error: "Anda harus login sebagai admin." }, { status: 401 });
   if (!sameOrigin(request)) return NextResponse.json({ error: "Origin tidak sah." }, { status: 403 });
+
+  const blocked = rateLimitResponse(await checkRateLimit(request, "content-write", 20, 60, session.email));
+  if (blocked) return blocked;
+
   try {
     const raw = await request.text();
     if (raw.length > 35000) return NextResponse.json({ error: "Data terlalu besar." }, { status: 413 });
@@ -69,7 +79,7 @@ export async function POST(request: NextRequest) {
     const validationError = validate(body);
     if (validationError) return NextResponse.json({ error: validationError }, { status: 400 });
     const result = await callAdminGas(body as Record<string, unknown>);
-    return NextResponse.json({ ok: true, id: result.id ?? null, message: "Perubahan tersimpan. Halaman publik diperbarui setelah cache berakhir." });
+    return NextResponse.json({ ok: true, id: result.id ?? null, message: "Perubahan tersimpan. Halaman publik diperbarui setelah cache berakhir." }, { headers: { "Cache-Control": "no-store" } });
   } catch {
     return NextResponse.json({ error: "Gagal menyimpan ke GAS. Periksa pengaturan admin dan koneksi, lalu coba lagi." }, { status: 502 });
   }
