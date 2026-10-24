@@ -28,8 +28,12 @@ function validate(body: unknown): string | null {
       !Number.isInteger(Number(data.order)) || Number(data.order) < 0 || Number(data.order) > 9999 ||
       !validImage(data.image_url)) return "Data program atau galeri tidak valid.";
   if (data.published && !data.image_url) return "Unggah foto sebelum mempublikasikan konten.";
-  if (body.action === "upsert_program" && (typeof data.description !== "string" || data.description.length > 600 ||
-      typeof data.duration !== "string" || data.duration.length > 100)) return "Deskripsi program tidak valid.";
+  const validDuration = typeof data.duration === "string"
+    ? data.duration.length <= 100
+    : typeof data.duration === "number" && Number.isFinite(data.duration) && String(data.duration).length <= 100;
+  if (body.action === "upsert_program" && (typeof data.description !== "string" || data.description.length > 600 || !validDuration)) {
+    return "Deskripsi program tidak valid.";
+  }
   return null;
 }
 
@@ -78,7 +82,16 @@ export async function POST(request: NextRequest) {
     const body: unknown = JSON.parse(raw);
     const validationError = validate(body);
     if (validationError) return NextResponse.json({ error: validationError }, { status: 400 });
-    const result = await callAdminGas(body as Record<string, unknown>);
+    const payload = body as Record<string, unknown>;
+    if ((payload.action === "upsert_program" || payload.action === "upsert_gallery") && isPlain(payload.data)) {
+      const item = payload.data;
+      payload.data = {
+        ...item,
+        order: Number(item.order),
+        ...(payload.action === "upsert_program" ? { duration: String(item.duration) } : {}),
+      };
+    }
+    const result = await callAdminGas(payload);
     return NextResponse.json({ ok: true, id: result.id ?? null, message: "Perubahan tersimpan. Halaman publik diperbarui setelah cache berakhir." }, { headers: { "Cache-Control": "no-store" } });
   } catch {
     return NextResponse.json({ error: "Gagal menyimpan ke GAS. Periksa pengaturan admin dan koneksi, lalu coba lagi." }, { status: 502 });
