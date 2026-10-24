@@ -31,7 +31,7 @@ export default function GoogleLogin({ clientId }: { clientId: string }) {
         },
       });
       holder.current.replaceChildren();
-      window.google.accounts.id.renderButton(holder.current, { theme: "filled_black", size: "large", text: "signin_with", shape: "pill", width: "270" });
+      window.google.accounts.id.renderButton(holder.current, { theme: "filled_black", size: "large", text: "signin_with", shape: "pill", width: "270", login_hint: "kastriva01@gmail.com" });
       setReady(true);
     } catch (e) { setError(e instanceof Error ? e.message : "Tidak dapat memulai login Google."); }
   }, [clientId, ready]);
