@@ -26,8 +26,16 @@ function digest(value: string): string {
 }
 
 function getRedisConfig(): RedisConfig | null {
-  const rawUrl = process.env.UPSTASH_REDIS_REST_URL?.trim();
-  const token = process.env.UPSTASH_REDIS_REST_TOKEN?.trim();
+  // Vercel's Upstash Marketplace connection prefixes the provider's
+  // KV_REST_API_* variables with the configured project prefix.
+  const rawUrl = (
+    process.env.UPSTASH_REDIS_REST_URL ??
+    process.env.UPSTASH_REDIS_REST_KV_REST_API_URL
+  )?.trim();
+  const token = (
+    process.env.UPSTASH_REDIS_REST_TOKEN ??
+    process.env.UPSTASH_REDIS_REST_KV_REST_API_TOKEN
+  )?.trim();
 
   if (!rawUrl && !token) return null;
   if (!rawUrl || !token) throw new Error("Upstash environment variables are incomplete.");
