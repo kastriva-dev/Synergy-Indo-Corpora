@@ -25,6 +25,14 @@ function digest(value: string): string {
   return createHash("sha256").update(value).digest("hex").slice(0, 40);
 }
 
+function environmentNamespace(): string {
+  const vercelEnvironment = process.env.VERCEL_ENV;
+  if (vercelEnvironment === "production" || vercelEnvironment === "preview") {
+    return vercelEnvironment;
+  }
+  return process.env.NODE_ENV === "production" ? "production" : "development";
+}
+
 function getRedisConfig(): RedisConfig | null {
   // Vercel's Upstash Marketplace connection prefixes the provider's
   // KV_REST_API_* variables with the configured project prefix.
@@ -112,11 +120,12 @@ export async function checkRateLimit(
   identity?: string,
 ): Promise<RateLimitResult> {
   const safeScope = /^[a-z0-9_-]{1,40}$/i.test(scope) ? scope : "unknown";
+  const namespace = environmentNamespace();
   const keys = [
-    `synergy:rl:${safeScope}:ip:${digest(clientAddress(request))}`,
+    `synergy:${namespace}:rl:${safeScope}:ip:${digest(clientAddress(request))}`,
   ];
   if (identity?.trim()) {
-    keys.push(`synergy:rl:${safeScope}:admin:${digest(identity.trim().toLowerCase())}`);
+    keys.push(`synergy:${namespace}:rl:${safeScope}:admin:${digest(identity.trim().toLowerCase())}`);
   }
 
   let config: RedisConfig | null;
@@ -191,7 +200,7 @@ export type NonceConsumption = "consumed" | "replayed" | "unavailable";
 
 /** Atomically marks a login nonce as used so concurrent/replayed login requests cannot reuse it. */
 export async function consumeLoginNonce(nonce: string): Promise<NonceConsumption> {
-  const key = `synergy:login-nonce:${digest(nonce)}`;
+  const key = `synergy:${environmentNamespace()}:login-nonce:${digest(nonce)}`;
   let config: RedisConfig | null;
 
   try {
