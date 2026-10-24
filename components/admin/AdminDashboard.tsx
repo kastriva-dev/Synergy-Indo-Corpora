@@ -46,7 +46,7 @@ export default function AdminDashboard({ email, initial, backendReady }: { email
     setAdminLoad("loading");
     let cancelled = false;
     fetch("/api/admin/content", { cache: "no-store" }).then(async (res) => {
-      const result = await res.json();
+      const result = await res.json().catch(() => ({}));
       if (!res.ok || !result.ok) throw new Error(result.error || "Tidak dapat membaca data admin.");
       if (!result.data || !result.data.site || typeof result.data.site !== "object" ||
           Array.isArray(result.data.site) || !Array.isArray(result.data.programs) ||
@@ -59,10 +59,11 @@ export default function AdminDashboard({ email, initial, backendReady }: { email
         if (Array.isArray(result.data.gallery)) setGallery(result.data.gallery);
         setAdminLoad("ready");
       }
-    }).catch(() => {
+    }).catch((error: unknown) => {
       if (!cancelled) {
         setAdminLoad("failed");
-        setFailure("Data privat admin gagal diverifikasi. Fitur simpan dinonaktifkan sampai API Admin berhasil.");
+        const reason = error instanceof Error ? error.message : "Terjadi kesalahan jaringan.";
+        setFailure(`Koneksi API Admin gagal diverifikasi: ${reason} Tombol simpan dinonaktifkan.`);
       }
     });
     return () => { cancelled = true; };

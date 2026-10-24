@@ -1,13 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAdminSession, sameOrigin } from "@/lib/admin/auth";
+import { checkRateLimit, rateLimitResponse } from "@/lib/admin/rate-limit";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 const MAX = 2_200_000;
 
 export async function POST(request: NextRequest) {
-  if (!(await getAdminSession())) return NextResponse.json({error:"Login admin diperlukan."},{status:401});
+  const session = await getAdminSession();
+  if (!session) return NextResponse.json({error:"Login admin diperlukan."},{status:401});
   if (!sameOrigin(request)) return NextResponse.json({error:"Origin ditolak."},{status:403});
+
+  const blocked = rateLimitResponse(await checkRateLimit(request, "upload", 12, 600, session.email));
+  if (blocked) return blocked;
+
   const contentType = request.headers.get("content-type") || "";
   if (!/^multipart\/form-data(?:;|$)/i.test(contentType)) return NextResponse.json({error:"Upload harus menggunakan multipart/form-data."},{status:415});
   const len = Number(request.headers.get("content-length") || 0);

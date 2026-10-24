@@ -13,7 +13,7 @@ permissions:
 
 jobs:
   build:
-    name: TypeScript and Next.js production build
+    name: Dependency audit, TypeScript and Next.js build
     runs-on: ubuntu-latest
     timeout-minutes: 20
     env:
@@ -27,6 +27,8 @@ jobs:
           cache: npm
       - name: Install locked dependencies
         run: npm ci
+      - name: Audit dependency vulnerabilities
+        run: npm audit --audit-level=high
       - name: TypeScript check
         run: npm run typecheck
       - name: Production build
