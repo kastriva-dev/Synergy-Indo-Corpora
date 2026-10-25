@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAdminSession, sameOrigin } from "@/lib/admin/auth";
 import { checkRateLimit, rateLimitResponse } from "@/lib/admin/rate-limit";
-import { isRecruitmentBackendConfigured, recruitmentDb } from "@/lib/recruitment/store";
+import { isRecruitmentBackendConfigured, updateRecruitmentJob } from "@/lib/recruitment/store";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -40,12 +40,9 @@ export async function PATCH(request: NextRequest, context: { params: Promise<{ i
     if (raw.length > 12000) return NextResponse.json({ error: "Permintaan terlalu besar." }, { status: 413 });
     const input = jobInput(JSON.parse(raw));
     if (!input) return NextResponse.json({ error: "Data lowongan tidak valid." }, { status: 400 });
-    const updated = await recruitmentDb("/job_postings?id=eq." + encodeURIComponent(id) + "&select=id,slug,title,country,category,summary,description,requirements,image_url,application_deadline,is_published,created_at,updated_at", {
-      method: "PATCH", headers: { Prefer: "return=representation" },
-      body: JSON.stringify({ ...input, updated_by: session.email, updated_at: new Date().toISOString() }),
-    });
-    if (!Array.isArray(updated) || !updated.length) return NextResponse.json({ error: "Lowongan tidak ditemukan." }, { status: 404 });
-    return NextResponse.json({ ok: true, job: updated[0] }, { headers: { "Cache-Control": "no-store" } });
+    const job = await updateRecruitmentJob(id, { ...input, updated_by: session.email, updated_at: new Date().toISOString() });
+    if (!job) return NextResponse.json({ error: "Lowongan tidak ditemukan." }, { status: 404 });
+    return NextResponse.json({ ok: true, job }, { headers: { "Cache-Control": "no-store" } });
   } catch {
     return NextResponse.json({ error: "Lowongan belum dapat diperbarui." }, { status: 503, headers: { "Cache-Control": "no-store" } });
   }

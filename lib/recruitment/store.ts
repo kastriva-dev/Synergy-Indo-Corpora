@@ -1,11 +1,9 @@
 import "server-only";
 import { randomUUID } from "node:crypto";
 
-export const CV_BUCKET = "candidate-cvs";
-export const MAX_CV_BYTES = 5 * 1024 * 1024;
-
-// Fail closed until the approved privacy notice is finalized in code.
+export const MAX_CV_BYTES = 3 * 1024 * 1024;
 const PRIVACY_NOTICE_APPROVED_IN_CODE = false;
+
 export type RecruitmentJob = {
   id: string; slug: string; title: string; country: string; category: string; summary: string;
   description: string; requirements: string; image_url: string | null; application_deadline: string | null;
@@ -22,22 +20,45 @@ export type CandidateUploadIntent = {
   expires_at: string; consumed_at: string | null; created_at: string;
 };
 
-type BackendConfig = { url: string; serviceKey: string };
+type GasConfig = { url: string; secret: string };
+type GasEnvelope<T = Record<string, unknown>> = { ok: boolean; error?: string; [key: string]: unknown } & T;
 
-function backendConfig(): BackendConfig {
-  const rawUrl = process.env.SUPABASE_URL?.trim();
-  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY?.trim();
-  if (!rawUrl || !serviceKey) throw new Error("Recruitment backend is not configured.");
+function gasConfig(): GasConfig {
+  const rawUrl = process.env.GAS_ADMIN_WEB_APP_URL?.trim();
+  const secret = process.env.GAS_ADMIN_SECRET?.trim();
+  if (!rawUrl || !secret || secret.length < 32) throw new Error("Recruitment Google Apps Script is not configured.");
   const parsed = new URL(rawUrl);
-  if (parsed.protocol !== "https:" || !(parsed.hostname.endsWith(".supabase.co") || parsed.hostname.endsWith(".supabase.in")) ||
-      parsed.username || parsed.password || (parsed.pathname !== "" && parsed.pathname !== "/") || parsed.search || parsed.hash) {
-    throw new Error("Recruitment backend URL is invalid.");
+  if (parsed.protocol !== "https:" || parsed.hostname !== "script.google.com" ||
+      !parsed.pathname.endsWith("/exec") || parsed.username || parsed.password || parsed.search || parsed.hash) {
+    throw new Error("Recruitment Google Apps Script URL is invalid.");
   }
-  return { url: parsed.origin, serviceKey };
+  return { url: parsed.toString(), secret };
 }
 
 export function isRecruitmentBackendConfigured(): boolean {
-  try { backendConfig(); return true; } catch { return false; }
+  try { gasConfig(); return true; } catch { return false; }
+}
+
+async function callGas<T = Record<string, unknown>>(
+  action: string,
+  data?: Record<string, unknown>,
+): Promise<GasEnvelope<T>> {
+  const config = gasConfig();
+  const payload = JSON.stringify({ action, ...(data ? { data } : {}), secret: config.secret });
+  const response = await fetch(config.url, {
+    method: "POST",
+    headers: { "Content-Type": "text/plain;charset=utf-8" },
+    body: payload,
+    cache: "no-store",
+    redirect: "follow",
+    signal: AbortSignal.timeout(action === "upload_candidate_cv" || action === "download_candidate_cv" ? 45000 : 15000),
+  });
+  const raw = await response.text();
+  if (!response.ok) throw new Error("Recruitment gateway returned HTTP " + response.status + ".");
+  let result: GasEnvelope<T>;
+  try { result = JSON.parse(raw) as GasEnvelope<T>; } catch { throw new Error("Recruitment gateway returned invalid JSON."); }
+  if (result.ok !== true) throw new Error(typeof result.error === "string" ? result.error : "Recruitment request rejected.");
+  return result;
 }
 
 export function isRecruitmentReady(): boolean {
@@ -56,192 +77,198 @@ export function publicPrivacyNoticeVersion(): string {
   return process.env.CANDIDATE_PRIVACY_NOTICE_VERSION?.trim().slice(0, 80) || "";
 }
 
-function storagePath(path: string): string {
-  return path.split("/").map((part) => encodeURIComponent(part)).join("/");
-}
-
-function getHeaders(additional?: HeadersInit): Headers {
-  const config = backendConfig();
-  const headers = new Headers({ apikey: config.serviceKey, Authorization: "Bearer " + config.serviceKey, Accept: "application/json" });
-  if (additional) new Headers(additional).forEach((value, key) => headers.set(key, value));
-  return headers;
-}
-
-/** Server-only: never import this module from a Client Component. */
-export async function recruitmentDb<T = unknown>(path: string, init: RequestInit = {}): Promise<T> {
-  const config = backendConfig();
-  const headers = getHeaders(init.headers);
-  if (init.body && !headers.has("Content-Type")) headers.set("Content-Type", "application/json");
-  const response = await fetch(config.url + "/rest/v1" + (path.startsWith("/") ? path : "/" + path), {
-    ...init, headers, cache: "no-store", signal: init.signal ?? AbortSignal.timeout(12000),
-  });
-  const body = await response.text();
-  if (!response.ok) throw new Error("Recruitment database request failed with status " + response.status + ".");
-  if (!body) return undefined as T;
-  try { return JSON.parse(body) as T; } catch { throw new Error("Recruitment database returned an invalid response."); }
-}
-
-export async function recruitmentStorage(path: string, init: RequestInit = {}): Promise<Response> {
-  const config = backendConfig();
-  const headers = getHeaders(init.headers);
-  if (init.body && !headers.has("Content-Type")) headers.set("Content-Type", "application/json");
-  return fetch(config.url + "/storage/v1" + (path.startsWith("/") ? path : "/" + path), {
-    ...init, headers, cache: "no-store", signal: init.signal ?? AbortSignal.timeout(20000),
-  });
-}
-
 export async function checkRecruitmentServiceReady(): Promise<boolean> {
   if (!isRecruitmentReady()) return false;
   try {
-    await recruitmentDb("/job_postings?select=id&limit=1");
-    const response = await recruitmentStorage("/bucket/" + CV_BUCKET);
-    if (!response.ok) return false;
-    const bucket = await response.json() as { id?: string; public?: boolean; file_size_limit?: number; allowed_mime_types?: string[] };
-    return bucket.id === CV_BUCKET && bucket.public === false && Number(bucket.file_size_limit) === MAX_CV_BYTES &&
-      Array.isArray(bucket.allowed_mime_types) && bucket.allowed_mime_types.includes("application/pdf");
+    const result = await callGas<{ ready?: boolean }>("recruitment_health");
+    return result.ready === true;
   } catch { return false; }
+}
+
+function safeFileName(name: string): string {
+  const safe = name.normalize("NFKC").replace(/[^a-zA-Z0-9._-]/g, "_").slice(0, 120);
+  if (!safe.toLowerCase().endsWith(".pdf")) throw new Error("CV must be a PDF.");
+  return safe || "cv.pdf";
+}
+
+function validPdf(bytes: Buffer): boolean {
+  return bytes.length >= 8 && bytes.length <= MAX_CV_BYTES && bytes.subarray(0, 5).toString("ascii") === "%PDF-";
 }
 
 export async function getPublishedJobs(): Promise<RecruitmentJob[]> {
   if (!isRecruitmentBackendConfigured()) return [];
-  const query = new URLSearchParams({
-    select: "id,slug,title,country,category,summary,description,requirements,image_url,application_deadline,is_published",
-    is_published: "eq.true", order: "created_at.desc", limit: "100",
-  });
-  const rows = await recruitmentDb<RecruitmentJob[]>("/job_postings?" + query.toString());
-  const today = new Date().toISOString().slice(0, 10);
-  return rows.filter((job) => !job.application_deadline || job.application_deadline >= today);
+  const result = await callGas<{ jobs?: RecruitmentJob[] }>("list_public_jobs");
+  return Array.isArray(result.jobs) ? result.jobs : [];
 }
 
 export async function getPublishedJob(id: string): Promise<RecruitmentJob | null> {
-  const query = new URLSearchParams({
-    select: "id,slug,title,country,category,summary,description,requirements,image_url,application_deadline,is_published",
-    id: "eq." + id, is_published: "eq.true", limit: "1",
-  });
-  const rows = await recruitmentDb<RecruitmentJob[]>("/job_postings?" + query.toString());
-  const job = rows[0];
-  if (!job || (job.application_deadline && job.application_deadline < new Date().toISOString().slice(0, 10))) return null;
-  return job;
+  if (!/^[0-9a-f-]{36}$/i.test(id)) return null;
+  const result = await callGas<{ job?: RecruitmentJob | null }>("get_public_job", { id });
+  return result.job && typeof result.job === "object" ? result.job : null;
 }
 
-function safeFileName(name: string): string {
-  const safe = name.normalize("NFKC").replace(/[^a-zA-Z0-9._-]/g, "_").slice(0, 100);
-  if (!safe.toLowerCase().endsWith(".pdf")) throw new Error("CV harus PDF.");
-  return safe || "cv.pdf";
-}
-
-export async function createCandidateUploadIntent(name: string, size: number): Promise<{ id: string; signedUrl: string; expiresAt: string }> {
-  if (!Number.isInteger(size) || size < 1 || size > MAX_CV_BYTES) throw new Error("Ukuran CV tidak valid.");
+export async function createCandidateUploadIntent(
+  name: string,
+  size: number,
+): Promise<{ id: string; expiresAt: string }> {
+  if (!Number.isInteger(size) || size < 1 || size > MAX_CV_BYTES) throw new Error("CV size is invalid.");
   const fileName = safeFileName(name);
-  const id = randomUUID();
-  const path = id + "/" + randomUUID() + ".pdf";
   const now = new Date();
-  // Supabase signed-upload URLs default to a 2-hour lifetime.
-  const expiresAt = new Date(now.getTime() + 2 * 60 * 60 * 1000).toISOString();
-  await recruitmentDb("/candidate_upload_intents", {
-    method: "POST", headers: { Prefer: "return=minimal" },
-    body: JSON.stringify({ id, storage_path: path, original_file_name: fileName, declared_size: size,
-      expires_at: expiresAt, consumed_at: null, created_at: now.toISOString() }),
+  const intent = {
+    id: randomUUID(),
+    original_file_name: fileName,
+    declared_size: size,
+    expires_at: new Date(now.getTime() + 30 * 60 * 1000).toISOString(),
+    created_at: now.toISOString(),
+  };
+  const result = await callGas<{ intent?: CandidateUploadIntent }>("create_candidate_upload_intent", intent);
+  if (!result.intent?.id || !result.intent.expires_at) throw new Error("Upload intent was not created.");
+  return { id: result.intent.id, expiresAt: result.intent.expires_at };
+}
+
+export async function uploadCandidateCv(uploadId: string, bytes: Buffer): Promise<void> {
+  if (!/^[0-9a-f-]{36}$/i.test(uploadId) || !validPdf(bytes)) throw new Error("CV PDF is invalid.");
+  const result = await callGas<{ file_id?: string }>("upload_candidate_cv", {
+    id: uploadId,
+    mime_type: "application/pdf",
+    base64: bytes.toString("base64"),
   });
-  const config = backendConfig();
-  const signer = await recruitmentStorage("/object/upload/sign/" + CV_BUCKET + "/" + storagePath(path), {
-    method: "POST", body: JSON.stringify({}),
-  });
-  if (!signer.ok) throw new Error("Tidak dapat menyiapkan unggahan CV.");
-  const signedData = await signer.json() as { url?: string; signedURL?: string };
-  const returnedUrl = signedData.url || signedData.signedURL;
-  if (typeof returnedUrl !== "string" || !returnedUrl) throw new Error("URL unggahan tidak valid.");
-  const signedUrl = /^https:\/\//i.test(returnedUrl)
-    ? returnedUrl
-    : config.url + "/storage/v1" + (returnedUrl.startsWith("/") ? returnedUrl : "/" + returnedUrl);
-  const parsed = new URL(signedUrl);
-  if (parsed.protocol !== "https:" || parsed.origin !== config.url || !parsed.pathname.includes("/object/upload/sign/")) {
-    throw new Error("URL unggahan tidak valid.");
-  }
-  return { id, signedUrl: parsed.toString(), expiresAt };
+  if (typeof result.file_id !== "string" || !result.file_id) throw new Error("CV was not stored.");
 }
 
 export async function getPendingUploadIntent(id: string): Promise<CandidateUploadIntent | null> {
-  const query = new URLSearchParams({
-    select: "id,storage_path,original_file_name,declared_size,expires_at,consumed_at,created_at",
-    id: "eq." + id, consumed_at: "is.null", expires_at: "gt." + new Date().toISOString(), limit: "1",
-  });
-  const rows = await recruitmentDb<CandidateUploadIntent[]>("/candidate_upload_intents?" + query.toString());
-  return rows[0] ?? null;
+  if (!/^[0-9a-f-]{36}$/i.test(id)) return null;
+  const result = await callGas<{ intent?: CandidateUploadIntent | null }>("get_candidate_upload_intent", { id });
+  const intent = result.intent;
+  if (!intent || !intent.storage_path || intent.consumed_at) return null;
+  if (Date.parse(intent.expires_at) <= Date.now()) return null;
+  return intent;
 }
 
 export async function verifyStoredPdf(path: string, declaredSize: number): Promise<void> {
-  const response = await recruitmentStorage("/object/authenticated/" + CV_BUCKET + "/" + storagePath(path));
-  if (!response.ok) throw new Error("CV belum diunggah.");
-  const size = Number(response.headers.get("content-length") || 0);
-  if (size > MAX_CV_BYTES) throw new Error("CV terlalu besar.");
-  const mime = (response.headers.get("content-type") || "").split(";")[0].trim().toLowerCase();
-  if (mime && mime !== "application/pdf" && mime !== "application/octet-stream") throw new Error("Jenis CV tidak valid.");
-  const bytes = Buffer.from(await response.arrayBuffer());
-  if (bytes.length < 8 || bytes.length > MAX_CV_BYTES || bytes.length !== declaredSize || bytes.subarray(0, 5).toString("ascii") !== "%PDF-") {
-    throw new Error("Isi CV tidak valid.");
-  }
+  const bytes = await getCandidateCvBytes(path);
+  if (bytes.length !== declaredSize) throw new Error("Stored CV size does not match the upload.");
 }
 
 export async function submitCandidateApplication(input: {
   uploadId: string; fullName: string; phone: string; email: string | null;
   targetCountry: string; jobId: string; privacyNoticeVersion: string; retentionDays: number;
 }): Promise<{ id: string; status: string; created_at: string }> {
-  return recruitmentDb<{ id: string; status: string; created_at: string }>("/rpc/submit_candidate_application", {
-    method: "POST", body: JSON.stringify({
-      p_upload_id: input.uploadId, p_full_name: input.fullName, p_phone: input.phone, p_email: input.email,
-      p_target_country: input.targetCountry, p_job_id: input.jobId,
-      p_privacy_notice_version: input.privacyNoticeVersion, p_retention_days: input.retentionDays,
-    }),
-  });
+  const result = await callGas<{ application?: { id: string; status: string; created_at: string } }>(
+    "submit_candidate_application",
+    {
+      application_id: randomUUID(),
+      upload_id: input.uploadId,
+      full_name: input.fullName,
+      phone: input.phone,
+      email: input.email,
+      target_country: input.targetCountry,
+      job_id: input.jobId,
+      privacy_notice_version: input.privacyNoticeVersion,
+      retention_days: input.retentionDays,
+    },
+  );
+  if (!result.application?.id) throw new Error("Candidate application was not saved.");
+  return result.application;
 }
 
 export async function getCandidateApplication(id: string): Promise<CandidateApplication | null> {
-  const query = new URLSearchParams({
-    select: "id,full_name,phone,email,target_country,job_id,job_title_snapshot,cv_storage_path,cv_original_name,status,privacy_notice_version,consent_at,created_at,updated_at,retention_due_at,reviewed_by,reviewed_at,deleted_at",
-    id: "eq." + id, limit: "1",
-  });
-  const rows = await recruitmentDb<CandidateApplication[]>("/candidate_applications?" + query.toString());
-  return rows[0] ?? null;
+  if (!/^[0-9a-f-]{36}$/i.test(id)) return null;
+  const result = await callGas<{ application?: CandidateApplication | null }>("get_candidate_application", { id });
+  return result.application && typeof result.application === "object" ? result.application : null;
 }
 
-export async function getCandidateCvBytes(path: string): Promise<Buffer> {
-  const response = await recruitmentStorage("/object/authenticated/" + CV_BUCKET + "/" + storagePath(path));
-  if (!response.ok) throw new Error("CV tidak ditemukan.");
-  if (Number(response.headers.get("content-length") || 0) > MAX_CV_BYTES) throw new Error("CV terlalu besar.");
-  const bytes = Buffer.from(await response.arrayBuffer());
-  if (bytes.length < 8 || bytes.length > MAX_CV_BYTES || bytes.subarray(0, 5).toString("ascii") !== "%PDF-") throw new Error("CV bukan PDF yang valid.");
+export async function getCandidateCvBytes(fileId: string): Promise<Buffer> {
+  if (!/^[A-Za-z0-9_-]{15,120}$/.test(fileId)) throw new Error("CV identifier is invalid.");
+  const result = await callGas<{ base64?: string; byte_length?: number }>("download_candidate_cv", { file_id: fileId });
+  if (typeof result.base64 !== "string") throw new Error("CV was not found.");
+  const bytes = Buffer.from(result.base64, "base64");
+  if (!validPdf(bytes) || (typeof result.byte_length === "number" && result.byte_length !== bytes.length)) {
+    throw new Error("Stored CV is not a valid PDF.");
+  }
   return bytes;
 }
 
-export async function deleteCandidateCv(path: string): Promise<void> {
-  const response = await recruitmentStorage("/object/" + CV_BUCKET, { method: "DELETE", body: JSON.stringify({ prefixes: [path] }) });
-  if (!response.ok && response.status !== 404) throw new Error("CV tidak dapat dihapus.");
+export async function deleteCandidateCv(fileId: string): Promise<void> {
+  if (!/^[A-Za-z0-9_-]{15,120}$/.test(fileId)) throw new Error("CV identifier is invalid.");
+  await callGas("delete_candidate_cv", { file_id: fileId });
 }
 
 export async function writeCandidateAudit(input: {
   actorType: "admin" | "system"; actorEmail: string; action: string; applicationId: string;
   details?: Record<string, string | number | boolean | null>;
 }): Promise<void> {
-  await recruitmentDb("/candidate_audit_logs", {
-    method: "POST", headers: { Prefer: "return=minimal" },
-    body: JSON.stringify({
-      actor_type: input.actorType, actor_email: input.actorEmail, action: input.action,
-      entity_type: "candidate_application", entity_id: input.applicationId,
-      details: input.details ?? {}, created_at: new Date().toISOString(),
-    }),
+  await callGas("audit_candidate_application", {
+    actor_type: input.actorType, actor_email: input.actorEmail, action: input.action,
+    application_id: input.applicationId, details: input.details ?? {},
   });
+}
+
+export async function listAdminJobs(): Promise<RecruitmentJob[]> {
+  const result = await callGas<{ jobs?: RecruitmentJob[] }>("list_admin_jobs");
+  return Array.isArray(result.jobs) ? result.jobs : [];
+}
+
+export async function createRecruitmentJob(job: Record<string, unknown>): Promise<RecruitmentJob> {
+  const result = await callGas<{ job?: RecruitmentJob }>("create_job", { job });
+  if (!result.job) throw new Error("Job was not saved.");
+  return result.job;
+}
+
+export async function updateRecruitmentJob(
+  id: string,
+  input: Record<string, unknown>,
+): Promise<RecruitmentJob | null> {
+  const result = await callGas<{ job?: RecruitmentJob | null }>("update_job", { id, job: input });
+  return result.job && typeof result.job === "object" ? result.job : null;
+}
+
+export async function getAdminApplications(options: {
+  limit: number; offset: number; status: string | null;
+}): Promise<Partial<CandidateApplication>[]> {
+  const result = await callGas<{ applications?: Partial<CandidateApplication>[] }>("list_candidate_applications", options);
+  return Array.isArray(result.applications) ? result.applications : [];
+}
+
+export async function updateCandidateApplicationStatus(
+  id: string, status: string, actorEmail: string,
+): Promise<CandidateApplication | null> {
+  const result = await callGas<{ application?: CandidateApplication | null }>(
+    "update_candidate_application_status", { id, status, actor_email: actorEmail },
+  );
+  return result.application && typeof result.application === "object" ? result.application : null;
+}
+
+export async function anonymizeCandidateApplication(
+  id: string, actorEmail: string, reason: string,
+): Promise<void> {
+  await callGas("anonymize_candidate_application", { id, actor_email: actorEmail, reason });
+}
+
+export async function cleanupCandidateData(): Promise<{
+  expiredUploads: number; expiredApplications: number; consumedIntentsDeleted: number;
+}> {
+  const result = await callGas<{
+    expiredUploads?: number; expiredApplications?: number; consumedIntentsDeleted?: number;
+  }>("cleanup_candidate_data", { retention_days: validRetentionDays() });
+  return {
+    expiredUploads: Number(result.expiredUploads || 0),
+    expiredApplications: Number(result.expiredApplications || 0),
+    consumedIntentsDeleted: Number(result.consumedIntentsDeleted || 0),
+  };
 }
 
 export function validRetentionDays(): number {
   const value = Number(process.env.CANDIDATE_RETENTION_DAYS);
-  if (!Number.isInteger(value) || value < 1 || value > 3650) throw new Error("Masa retensi belum dikonfigurasi.");
+  if (!Number.isInteger(value) || value < 1 || value > 3650) throw new Error("Retention period is not configured.");
   return value;
 }
 
 export function activePrivacyNoticeVersion(): string {
-  if (!PRIVACY_NOTICE_APPROVED_IN_CODE || process.env.CANDIDATE_PRIVACY_NOTICE_APPROVED !== "true") throw new Error("Pemberitahuan privasi belum disetujui.");
+  if (!PRIVACY_NOTICE_APPROVED_IN_CODE || process.env.CANDIDATE_PRIVACY_NOTICE_APPROVED !== "true") {
+    throw new Error("Candidate privacy notice has not been approved.");
+  }
   const value = process.env.CANDIDATE_PRIVACY_NOTICE_VERSION?.trim();
-  if (!value || value.length > 80) throw new Error("Versi pemberitahuan privasi belum dikonfigurasi.");
+  if (!value || value.length > 80) throw new Error("Candidate privacy notice version is not configured.");
   return value;
 }

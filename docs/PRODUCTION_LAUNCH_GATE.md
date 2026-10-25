@@ -1,59 +1,61 @@
-# Sinergi Global — Full Production Launch Gate
+# Sinergi Global — Production Launch Gate
 
-Status: DRAFT / RELEASE BLOCKED. Checklist ini bukan bukti bahwa kontrol telah lulus.
+Status: DRAFT / RELEASE BLOCKED. Passing CI is not evidence that privacy, storage permissions, or recruitment workflows have passed.
 
-## Target rilis lengkap
-- Situs profil dan lowongan hanya memakai data resmi yang diverifikasi.
-- Form lamaran merekam persetujuan pemberitahuan privasi versi yang disetujui.
-- CV PDF maksimal 5 MiB disimpan di bucket privat, diunggah memakai signed upload URL satu objek; service-role key hanya di server.
-- Data kandidat disimpan di database privat, terpisah dari konten publik dan sheet CMS.
-- Admin dapat membuat/memperbarui lowongan, meninjau kandidat, mengubah status, mengunduh CV dengan audit, dan menghapus/anonymize data.
-- Retensi otomatis serta audit submit, status, unduhan CV, dan penghapusan telah diuji.
+## Current temporary architecture
+- Next.js server endpoints call the private Google Apps Script admin gateway.
+- Recruitment metadata is in a dedicated Google spreadsheet created by `setupSynergyRecruitmentStorage`; it is separate from the public CMS spreadsheet.
+- Candidate CV PDFs are in a restricted Google Drive folder owned by the account that owns the private admin script.
+- This temporary setup may use a personal Drive account for development, but must use synthetic test data only. Do not accept real candidate CVs before the company approves ownership, access, privacy, and retention arrangements.
+- CV size limit is 3 MiB to remain below the 4.5 MB Vercel function request-body limit.
+- Supabase/Firebase resources are not required by this branch.
 
-## Environment server-only
-- SUPABASE_URL
-- SUPABASE_SERVICE_ROLE_KEY (server-only; jangan gunakan NEXT_PUBLIC_)
-- CANDIDATE_PRIVACY_NOTICE_VERSION
-- CANDIDATE_PRIVACY_NOTICE_APPROVED=true hanya setelah persetujuan legal/perusahaan dicatat
-- CANDIDATE_RETENTION_DAYS (1–3650, sudah disetujui)
-- CRON_SECRET
-- GOOGLE_CLIENT_ID, ADMIN_ALLOWED_EMAILS, ADMIN_SESSION_SECRET
-- Upstash Redis pair khusus Preview; Production memakai kredensial terpisah.
-Jangan masukkan secret ke Git, PR, screenshot atau chat.
+## Required server-only environment
+- `GAS_ADMIN_WEB_APP_URL`
+- `GAS_ADMIN_SECRET`
+- Existing `GOOGLE_CLIENT_ID`, `ADMIN_ALLOWED_EMAILS`, `ADMIN_SESSION_SECRET`
+- Upstash Redis URL/token pair for distributed rate limits and one-time admin login nonces
+- `CANDIDATE_PRIVACY_NOTICE_VERSION` only after company/legal approval
+- `CANDIDATE_PRIVACY_NOTICE_APPROVED=true` only after company/legal approval
+- `CANDIDATE_RETENTION_DAYS` (1–3650, approved duration)
+- `CRON_SECRET` (server only)
+Never place secrets in Git, screenshots, client-side environment variables, or chat.
 
-## Setup database/storage
-1. Pilih proyek Supabase dedicated yang ACTIVE setelah pemilik meninjau biaya, region/data residency, dan hak akses.
-2. Tinjau docs/RECRUITMENT_BACKEND_SETUP.sql, lalu pindahkan ke migration Supabase yang terlacak lewat alur CLI/migration sebelum dijalankan.
-3. Pastikan RLS aktif; anon/authenticated tidak memiliki grant atau policy yang bisa membaca pelamar maupun CV.
-4. Bucket candidate-cvs harus private, batas 5 MiB, MIME application/pdf. Uji signed upload dari origin Preview secara terpisah.
-5. Gunakan lowongan sintetis untuk QA. Jangan publikasikan posisi contoh sebagai lowongan nyata.
+## Storage setup
+1. Review the private admin script and back it up.
+2. Replace the private Apps Script source with `gas/AdminCode.gs`; do not touch the public read-only `gas/Code.gs` deployment.
+3. Run `setupSynergyRecruitmentStorage` once while signed in to the intended temporary Drive owner account. Verify the recruitment spreadsheet and CV folder are not shared publicly or by link.
+4. Deploy a new version of the private GAS web app, preserving its existing `/exec` URL.
+5. Confirm a health check returns ready only when the dedicated spreadsheet and private folder are present.
+6. Record who owns the personal account and who can access the files; plan account handover or VPS migration before production.
 
-## Gerbang legal dan operasional
-- Identitas hukum pengendali data, kontak resmi, dasar pemrosesan, hak kandidat, retensi, penerima/prosesor, lokasi/transfer data lintas negara, dan prosedur penghapusan harus ada dalam pemberitahuan final berbahasa Indonesia.
-- Perusahaan/legal harus menyetujui naskah dan versi privasi.
-- Konfirmasi semua lowongan, kontak, foto/video, brand, legalitas serta domain resmi.
-- Tetapkan pemilik operasional untuk permintaan data, insiden, backup, dan restore.
-Endpoint lamaran tetap mati kecuali pemberitahuan privasi disetujui perusahaan, environment menyediakan versi dan masa retensi yang disetujui, database/Storage/Redis/cron siap, serta konstanta `PRIVACY_NOTICE_APPROVED_IN_CODE` dalam kode diubah menjadi true bersamaan dengan review dan finalisasi naskah. Variabel environment saja tidak dapat mengaktifkan pengumpulan data.
+## Legal and operational blockers
+- Final Indonesian privacy notice approved by the company/legal reviewer; identify the legal data controller and official contact.
+- Document purposes, legal basis/consent, storage providers and location, access recipients, possible cross-border processing, candidate rights, retention, deletion and incident contact.
+- Confirm role and retention policies, and whether use of an individual developer's Google account is accepted by the client.
+- Verify every published vacancy and company content is official.
+- Confirm data backup, restore, account recovery and operational ownership.
 
-## Uji wajib Preview
-- Lamaran uji menghasilkan satu record dan CV tertaut.
-- Akses anonim/tebakan path untuk CV gagal; CV hanya diunduh lewat admin session.
-- Tolak ukuran >5 MiB, konten non-PDF, upload expired/replay, job draft/kedaluwarsa, consent tidak dicentang, dan origin lintas situs.
-- Tidak ada PII atau path CV di API publik, log rutin, error, atau halaman publik.
-- Admin tanpa sesi mendapat 401; perubahan status memakai audit identitas admin.
-- Penghapusan CV dan anonimisasi selesai; job retensi hanya memproses tanggal due yang telah disetujui.
-- Rate limit menghasilkan 429; Redis gagal tertutup 503.
-- Uji login, logout/expiry, CSRF, XSS, CSP, clickjacking, cache/header, mobile/accessibility, backup/restore dan respons insiden.
-- Jalankan npm ci, typecheck, build, dependency audit dan browser regression.
+## Mandatory Preview tests
+- Real Google Sheet/folder permissions are checked; an unauthenticated user cannot list candidate rows or fetch a CV.
+- Candidate upload validates PDF signature and size, and does not set any file to `Anyone with the link`.
+- A valid synthetic application writes exactly one candidate row and attaches the correct CV.
+- Duplicate/replayed upload intent cannot create multiple applications.
+- Reject >3 MiB files, false PDF MIME, non-PDF magic bytes, expired intent, draft/expired jobs, invalid consent, invalid origin and malformed fields.
+- Admin without a session gets 401; admin job/status operations are same-origin and rate-limited.
+- CV download requires admin session, returns no-store headers and writes a minimal audit record.
+- Anonymization removes CV access and clears personal fields. The current Drive delete action uses Trash; implement and verify permanent deletion before production if the retention/privacy policy requires irreversible erasure.
+- Expired orphaned uploads are cleaned; retention cleanup does not expose personal data in responses/logs.
+- Upstash rate limit failures fail closed with 503; request limits return 429.
+- Test login, logout/session expiration, CSRF, XSS, CSP, clickjacking, cache/security headers, mobile/accessibility and backup/restore.
+- Run `npm ci`, `npm audit --audit-level=high`, `npm run typecheck`, `npm run build`, and browser regression tests.
 
-## Blocker awal
-- Belum ada proyek Supabase khusus rekrutmen yang aktif/terkonfirmasi.
-- Koneksi Vercel yang tersedia saat pemeriksaan ini belum menampilkan team/project.
-- Naskah privasi dan durasi retensi belum disetujui.
-- QA PR security #1 dan #2 masih pending; belum ada test harness otomatis khusus.
-- Belum ada lowongan nyata yang diverifikasi.
-- Draft ini tidak mengubah environment, database, domain, atau deployment Production.
+## VPS migration gate
+Before moving from Drive/Sheets to the client's VPS, confirm provider/OS/access and backup facilities. Export row data and CV files over a protected channel, map Drive IDs to VPS file identifiers, preserve consent/retention/audit metadata, verify record counts and checksums, test role-based downloads, and keep a rollback copy. Then replace the storage adapter and test again. Do not assume a provider switch automatically migrates stored files.
 
-
-## Signed upload token timing
-- Supabase signed upload URLs default to a 2-hour lifetime. The intent record remains valid for 2 hours, and cleanup only deletes expired unused uploads after an additional safety window so a still-valid token cannot create an orphaned CV after its intent has already been deleted.
+## Explicitly not complete
+- The privacy notice remains a draft and `PRIVACY_NOTICE_APPROVED_IN_CODE` is hardcoded `false`; the public form stays disabled.
+- No real candidate data should be collected in this stage.
+- Apps Script deployment, actual Drive/Sheets permissions, rate limits, upload workflow, deletion and backup/restore have not yet been integration-tested.
+- PR #1/#2 security QA and site-wide CSP/security checks remain outstanding.
+- This document does not authorize production deployment, DNS changes, merging, or exposing the admin backend.

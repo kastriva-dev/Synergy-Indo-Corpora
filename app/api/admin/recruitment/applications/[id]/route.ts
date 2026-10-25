@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAdminSession, sameOrigin } from "@/lib/admin/auth";
 import { checkRateLimit, rateLimitResponse } from "@/lib/admin/rate-limit";
-import { deleteCandidateCv, getCandidateApplication, isRecruitmentBackendConfigured, recruitmentDb } from "@/lib/recruitment/store";
+import {
+  anonymizeCandidateApplication, getCandidateApplication, isRecruitmentBackendConfigured,
+  updateCandidateApplicationStatus,
+} from "@/lib/recruitment/store";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -22,10 +25,9 @@ export async function PATCH(request: NextRequest, context: { params: Promise<{ i
     if (raw.length > 2000) return NextResponse.json({ error: "Permintaan terlalu besar." }, { status: 413 });
     const body = JSON.parse(raw) as { status?: unknown };
     if (typeof body.status !== "string" || !ALLOWED_STATUSES.has(body.status)) return NextResponse.json({ error: "Status lamaran tidak valid." }, { status: 400 });
-    const result = await recruitmentDb("/rpc/update_candidate_application_status", {
-      method: "POST", body: JSON.stringify({ p_application_id: id, p_status: body.status, p_actor_email: session.email }),
-    });
-    return NextResponse.json({ ok: true, application: result }, { headers: { "Cache-Control": "no-store" } });
+    const application = await updateCandidateApplicationStatus(id, body.status, session.email);
+    if (!application) return NextResponse.json({ error: "Lamaran tidak ditemukan." }, { status: 404 });
+    return NextResponse.json({ ok: true, application }, { headers: { "Cache-Control": "no-store" } });
   } catch {
     return NextResponse.json({ error: "Status lamaran tidak dapat diperbarui." }, { status: 503, headers: { "Cache-Control": "no-store" } });
   }
@@ -43,10 +45,7 @@ export async function DELETE(request: NextRequest, context: { params: Promise<{ 
   try {
     const application = await getCandidateApplication(id);
     if (!application || application.status === "deleted") return NextResponse.json({ error: "Lamaran tidak ditemukan." }, { status: 404 });
-    if (application.cv_storage_path) await deleteCandidateCv(application.cv_storage_path);
-    await recruitmentDb("/rpc/anonymize_candidate_application", {
-      method: "POST", body: JSON.stringify({ p_application_id: id, p_actor_email: session.email, p_reason: "admin_request" }),
-    });
+    await anonymizeCandidateApplication(id, session.email, "admin_request");
     return NextResponse.json({ ok: true }, { headers: { "Cache-Control": "no-store" } });
   } catch {
     return NextResponse.json({ error: "Penghapusan data belum selesai. Periksa storage dan coba lagi." }, { status: 503, headers: { "Cache-Control": "no-store" } });

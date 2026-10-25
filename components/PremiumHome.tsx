@@ -140,15 +140,18 @@ export default function PremiumHome({ content, jobs, recruitmentReady, privacyNo
         body: JSON.stringify({ fileName: cvFile.name, fileSize: cvFile.size, contentType: "application/pdf" }),
       });
       const uploadResult = await uploadResponse.json().catch(() => ({}));
-      if (!uploadResponse.ok || !uploadResult.ok || typeof uploadResult.signedUrl !== "string" || typeof uploadResult.uploadId !== "string") {
+      if (!uploadResponse.ok || !uploadResult.ok || typeof uploadResult.uploadId !== "string") {
         throw new Error(typeof uploadResult.error === "string" ? uploadResult.error : "Sistem unggah CV belum siap.");
       }
-      const binaryUpload = await fetch(uploadResult.signedUrl, {
-        method: "PUT",
-        headers: { "Content-Type": "application/pdf", "x-upsert": "false" },
+      const binaryUpload = await fetch("/api/recruitment/upload/file", {
+        method: "POST",
+        headers: { "Content-Type": "application/pdf", "x-candidate-upload-id": uploadResult.uploadId },
         body: cvFile,
       });
-      if (!binaryUpload.ok) throw new Error("CV belum berhasil diunggah. Periksa koneksi lalu coba kembali.");
+      const binaryResult = await binaryUpload.json().catch(() => ({}));
+      if (!binaryUpload.ok || !binaryResult.ok) {
+        throw new Error(typeof binaryResult.error === "string" ? binaryResult.error : "CV belum berhasil diunggah. Periksa koneksi lalu coba kembali.");
+      }
       const applicationResponse = await fetch("/api/recruitment/applications", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -431,7 +434,7 @@ export default function PremiumHome({ content, jobs, recruitmentReady, privacyNo
               <div className="form-field"><label htmlFor="candidate-country">Negara tujuan</label><select id="candidate-country" name="country" value={targetCountry} onChange={(event) => { const job = jobs.find((item) => item.id === selectedPosition); if (job) { setTargetCountry(job.country); return; } setTargetCountry(event.target.value); }} disabled={!recruitmentReady || isSubmitting} required><option value="">Pilih negara tujuan</option>{countries.map((country) => <option key={country.name} value={country.name}>{country.flag} {country.name}</option>)}</select></div>
               <div className="form-field"><label htmlFor="candidate-position">Bidang / posisi</label><select id="candidate-position" name="position" value={selectedPosition} onChange={(event) => { setSelectedPosition(event.target.value); const job = jobs.find((item) => item.id === event.target.value); if (job) setTargetCountry(job.country); }} required><option value="">Pilih lowongan aktif</option>{jobs.map((job) => <option key={job.id} value={job.id}>{job.title} — {job.country}</option>)}</select></div>
             </div>
-            <div className="form-field"><label htmlFor="candidate-cv">Unggah CV <span>PDF · Maks. 5 MB</span></label><label className="file-drop" htmlFor="candidate-cv"><UploadCloud size={23} /><strong>{cvName || "Pilih CV PDF Anda"}</strong><small>{cvName ? "File siap untuk diunggah" : "PDF saja · maksimal 5 MB"}</small><input id="candidate-cv" name="cv" type="file" accept="application/pdf,.pdf" required disabled={!recruitmentReady || isSubmitting} onChange={async (event) => { const input = event.currentTarget; const file = input.files?.[0]; if (!file) { setCvName(""); setCvFile(null); return; } if (file.size > 5 * 1024 * 1024 || file.type !== "application/pdf" || !file.name.toLowerCase().endsWith(".pdf")) { setFormMessage("CV harus berupa PDF dengan ukuran maksimal 5 MB."); input.value = ""; setCvName(""); setCvFile(null); return; } const header = new Uint8Array(await file.slice(0, 5).arrayBuffer()); if (String.fromCharCode(...header) !== "%PDF-") { setFormMessage("Isi file bukan PDF yang valid."); input.value = ""; setCvName(""); setCvFile(null); return; } setCvFile(file); setCvName(file.name); setFormMessage(""); }} /></label></div>
+            <div className="form-field"><label htmlFor="candidate-cv">Unggah CV <span>PDF · Maks. 3 MiB</span></label><label className="file-drop" htmlFor="candidate-cv"><UploadCloud size={23} /><strong>{cvName || "Pilih CV PDF Anda"}</strong><small>{cvName ? "File siap untuk diunggah" : "PDF saja · maksimal 3 MiB"}</small><input id="candidate-cv" name="cv" type="file" accept="application/pdf,.pdf" required disabled={!recruitmentReady || isSubmitting} onChange={async (event) => { const input = event.currentTarget; const file = input.files?.[0]; if (!file) { setCvName(""); setCvFile(null); return; } if (file.size > 3 * 1024 * 1024 || file.type !== "application/pdf" || !file.name.toLowerCase().endsWith(".pdf")) { setFormMessage("CV harus berupa PDF dengan ukuran maksimal 3 MiB."); input.value = ""; setCvName(""); setCvFile(null); return; } const header = new Uint8Array(await file.slice(0, 5).arrayBuffer()); if (String.fromCharCode(...header) !== "%PDF-") { setFormMessage("Isi file bukan PDF yang valid."); input.value = ""; setCvName(""); setCvFile(null); return; } setCvFile(file); setCvName(file.name); setFormMessage(""); }} /></label></div>
             <div className="sr-only" aria-hidden="true"><label htmlFor="candidate-website">Biarkan kolom ini kosong</label><input id="candidate-website" name="website" autoComplete="off" tabIndex={-1} /></div>
             <label className="consent-check"><input type="checkbox" name="consent" required disabled={!recruitmentReady || isSubmitting} /><span>Saya telah membaca <a href="/privasi" target="_blank" rel="noreferrer">Pemberitahuan Privasi Kandidat</a> dan menyetujui pemrosesan data untuk proses rekrutmen.</span></label>
             <button className="button button--lime registration-submit" type="submit" disabled={isSubmitting || !recruitmentReady || jobs.length === 0}>{isSubmitting ? "MENGIRIM..." : "KIRIM LAMARAN"} <ArrowRight size={18} /></button>

@@ -1,37 +1,27 @@
-# Setup GAS + Google Sheets (Tahap 1)
+# Google Apps Script, Sheets, Drive — Sinergi Global
 
-## 1. Buat Sheets milik perusahaan
-1. Masuk ke Google Drive akun resmi perusahaan. Buat Google Sheets: `SYNERGY_WEBSITE_DB`.
-2. Dari Sheets pilih **Extensions / Ekstensi → Apps Script**.
-3. Ganti isi `Code.gs` di Apps Script dengan isi file `gas/Code.gs` ini.
-4. Simpan. Pilih fungsi **setupSynergySpreadsheet**, klik **Run / Jalankan** sekali. Berikan izin yang diminta Google.
-5. Akan dibuat tab `site`, `programs`, `gallery`, `registrations`. Fungsi ini hanya membuat tab yang belum ada dan **tidak menimpa tab lama**.
+## Public CMS (existing)
+- `gas/Code.gs` is the public **read-only** content API for published CMS values. Keep it separate and do not add candidate data or admin writes to it.
+- Its existing `SYNERGY_SPREADSHEET_ID` points to the website content spreadsheet.
+- The media upload/admin gateway is a separate Apps Script project using `gas/AdminCode.gs` and `SYNERGY_ADMIN_SECRET`.
 
-## 2. Publikasikan konten
-- Ubah nilai pada tab `site` untuk teks profil, kontak, dan judul.
-- Pada kolom `published`, pakai checkbox TRUE agar baris tampil publik.
-- Foto memakai `image_url` dari tempat penyimpanan gambar publik berbasis HTTPS.
-- `registrations` **PRIVATE**, tidak boleh dibagikan ke publik. Belum ada form pendaftaran pada Tahap 1.
+## Temporary recruitment storage
+1. Open the **private admin Apps Script project** that backs `GAS_ADMIN_WEB_APP_URL`. Back up its current code first.
+2. Replace the source with `gas/AdminCode.gs` from this branch. Keep its existing `SYNERGY_ADMIN_SECRET` and `SYNERGY_SPREADSHEET_ID` Script Properties.
+3. Run `setupSynergyRecruitmentStorage` once from that private script editor and authorize Google Sheets/Drive. It creates a separate `SINERGI_GLOBAL_RECRUITMENT_PRIVATE_DB` spreadsheet and `SINERGI_GLOBAL_CANDIDATE_CVS_PRIVATE` folder in the account that owns/runs the script.
+4. Verify the spreadsheet and folder are private. Do not enable `Anyone with the link`. Do not move the candidate tabs into the public CMS spreadsheet.
+5. Deploy the private script as a new version while keeping the existing `/exec` URL unchanged.
+6. In the website's Preview environment, verify `GAS_ADMIN_WEB_APP_URL` and `GAS_ADMIN_SECRET` are correct. Do not paste secrets into Git or client-side environment variables.
 
-## 3. Deploy Apps Script
-1. Klik **Deploy → New deployment → Web app**.
-2. **Execute as:** Me (akun perusahaan pemilik Sheets).
-3. **Who has access:** Anyone (termasuk tanpa login), karena endpoint ini hanya mengembalikan **konten yang sudah dipublikasikan**.
-4. Klik **Deploy**, setujui izin, salin URL yang berakhir `/exec`.
-5. Tes: `<URL_EXEC>?resource=health` → seharusnya ada `"ok":true`.
-6. Tes: `<URL_EXEC>?resource=public` → terlihat JSON `site`, `programs`, dan `gallery`.
+## Temporary-account warning
+This setup uses the Google account that owns the private Apps Script deployment. Confirm it is the intended personal account if using personal Drive temporarily. Use synthetic test data only until Sinergi Global approves the final privacy notice, retention policy and storage ownership. The recruitment form is deliberately disabled in code until approval.
 
-**Penting:** Jangan menambahkan endpoint menulis, edit, menghapus, login admin, atau data pendaftar ke deployment GAS publik ini. Untuk tahap admin kita buat kanal terpisah dengan autentikasi dan otorisasi.
+## File and data design
+- CV PDFs: private Drive folder, 3 MiB maximum.
+- Candidate records, upload intents, job postings and audit metadata: separate private Google spreadsheet.
+- Public CMS data stays on the existing CMS spreadsheet and public read-only script.
+- Admin endpoints proxy through the Next.js server and keep the Apps Script secret server-side.
+- Deletion currently moves a CV to Drive Trash and anonymizes its record; permanent deletion still needs policy-driven validation before production.
 
-## 4. Sambungkan Next.js
-- Copy `.env.example` menjadi `.env.local` di folder proyek.
-- Isi `GAS_WEB_APP_URL=https://script.google.com/macros/s/.../exec`
-- Restart Next.js (`Ctrl+C`, jalankan `npm.cmd run dev` lagi).
-- Konten website server-side di-cache/di-revalidasi sekitar 5 menit. Pembaruan Sheets tidak selalu langsung muncul.
-- Jika Apps Script tidak bisa diakses, website menggunakan konten demo bawaan sebagai cadangan. Sebelum live, ganti demo ini dengan konten final yang sudah divalidasi.
-
-## Keamanan dan biaya
-- Jangan mengaktifkan `Share → Anyone with link` untuk Google Sheets itu sendiri. Yang publik hanyalah API konten terpilih.
-- Jangan simpan password, akses admin, PIN, atau data sensitif pada tab `site`, `programs`, `gallery`.
-- GAS memiliki kuota harian dan batas waktu eksekusi; bukan database relasional atau SLA uptime 100%.
-- Hosting Next.js yang mendukung server rendering/ISR diperlukan untuk cara integrasi yang diberikan. Vercel Hobby tidak untuk website bisnis komersial; gunakan layanan hosting yang memperbolehkan pemakaian komersial.
+## Later VPS migration
+The storage adapter is in `lib/recruitment/store.ts`. Moving to VPS will still require a controlled export/import of candidate rows and files, mapping file identifiers, validating counts/checksums, securing access, testing backup/restore, and rotating credentials. A code/provider swap by itself does not migrate stored data.

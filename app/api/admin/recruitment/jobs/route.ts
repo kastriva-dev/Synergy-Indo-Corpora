@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { getAdminSession, sameOrigin } from "@/lib/admin/auth";
 import { checkRateLimit, rateLimitResponse } from "@/lib/admin/rate-limit";
-import { isRecruitmentBackendConfigured, recruitmentDb } from "@/lib/recruitment/store";
+import { createRecruitmentJob, isRecruitmentBackendConfigured, listAdminJobs } from "@/lib/recruitment/store";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -37,12 +37,13 @@ export async function GET(request: NextRequest) {
   const blocked = rateLimitResponse(await checkRateLimit(request, "candidate-admin-read", 60, 60, session.email));
   if (blocked) return blocked;
   try {
-    const jobs = await recruitmentDb("/job_postings?select=id,slug,title,country,category,summary,description,requirements,image_url,application_deadline,is_published,created_at,updated_at,created_by,updated_by&order=created_at.desc&limit=100");
+    const jobs = await listAdminJobs();
     return NextResponse.json({ jobs }, { headers: { "Cache-Control": "no-store" } });
   } catch {
     return NextResponse.json({ error: "Lowongan tidak dapat dibaca." }, { status: 503, headers: { "Cache-Control": "no-store" } });
   }
 }
+
 export async function POST(request: NextRequest) {
   const session = await getAdminSession();
   if (!session) return NextResponse.json({ error: "Login admin diperlukan." }, { status: 401 });
@@ -55,12 +56,12 @@ export async function POST(request: NextRequest) {
     if (raw.length > 12000) return NextResponse.json({ error: "Permintaan terlalu besar." }, { status: 413 });
     const input = jobInput(JSON.parse(raw));
     if (!input) return NextResponse.json({ error: "Lengkapi data lowongan. Posisi publik wajib memiliki deskripsi dan persyaratan." }, { status: 400 });
-    const row = { id: randomUUID(), slug: slugify(String(input.title)) + "-" + randomUUID().slice(0, 8), ...input,
-      image_url: null, created_by: session.email, updated_by: session.email, created_at: new Date().toISOString(), updated_at: new Date().toISOString() };
-    const created = await recruitmentDb("/job_postings?select=id,slug,title,country,category,summary,description,requirements,image_url,application_deadline,is_published,created_at,updated_at", {
-      method: "POST", headers: { Prefer: "return=representation" }, body: JSON.stringify(row),
+    const now = new Date().toISOString();
+    const job = await createRecruitmentJob({
+      id: randomUUID(), slug: slugify(String(input.title)) + "-" + randomUUID().slice(0, 8), ...input,
+      image_url: null, created_by: session.email, updated_by: session.email, created_at: now, updated_at: now,
     });
-    return NextResponse.json({ ok: true, job: Array.isArray(created) ? created[0] : created }, { status: 201, headers: { "Cache-Control": "no-store" } });
+    return NextResponse.json({ ok: true, job }, { status: 201, headers: { "Cache-Control": "no-store" } });
   } catch {
     return NextResponse.json({ error: "Lowongan belum dapat disimpan." }, { status: 503, headers: { "Cache-Control": "no-store" } });
   }
