@@ -1,11 +1,12 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import type { FormEvent } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import {
   ArrowDown, ArrowDownRight, ArrowRight, ArrowUpRight, BadgeCheck, Briefcase,
-  Building2, CheckCircle2, ChevronDown, Clock3, Factory, FileText, Globe,
+  Building2, CheckCircle2, ChevronDown, Factory, Globe,
   HardHat, Hotel, Instagram, Linkedin, Mail, MapPin, Menu, Play, Search,
   ShieldCheck, UploadCloud, Users, Warehouse, Wrench, X, Zap
 } from "lucide-react";
@@ -180,7 +181,7 @@ export default function PremiumHome({ content }: { content: PublicContent }) {
     document.getElementById("daftar")?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
-  function submitInterest(event: React.FormEvent<HTMLFormElement>) {
+  function submitInterest(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setFormMessage("Ini masih pratinjau desain. Data dan CV belum dikirim atau disimpan. Integrasi backend pendaftaran perlu diselesaikan sebelum formulir digunakan oleh publik.");
   }
