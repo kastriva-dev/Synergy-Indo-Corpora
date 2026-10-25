@@ -9,7 +9,7 @@ export const metadata: Metadata = {
   openGraph: { title: "Sinergi Global", description: "Keterampilan Anda, peluang dunia." },
 };
 
-export const viewport: Viewport = { themeColor: "#090c12", width: "device-width", initialScale: 1 };
+export const viewport: Viewport = { themeColor: "#071a29", width: "device-width", initialScale: 1 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return <html lang="id"><body>{children}</body></html>;
