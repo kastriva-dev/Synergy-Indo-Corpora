@@ -1,3 +1,4 @@
+import "server-only";
 import { randomUUID } from "node:crypto";
 
 export const CV_BUCKET = "candidate-cvs";
@@ -135,7 +136,8 @@ export async function createCandidateUploadIntent(name: string, size: number): P
   const id = randomUUID();
   const path = id + "/" + randomUUID() + ".pdf";
   const now = new Date();
-  const expiresAt = new Date(now.getTime() + 15 * 60 * 1000).toISOString();
+  // Supabase signed-upload URLs default to a 2-hour lifetime.
+  const expiresAt = new Date(now.getTime() + 2 * 60 * 60 * 1000).toISOString();
   await recruitmentDb("/candidate_upload_intents", {
     method: "POST", headers: { Prefer: "return=minimal" },
     body: JSON.stringify({ id, storage_path: path, original_file_name: fileName, declared_size: size,

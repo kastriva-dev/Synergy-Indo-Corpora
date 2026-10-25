@@ -53,3 +53,7 @@ Endpoint lamaran tetap mati kecuali pemberitahuan privasi disetujui perusahaan, 
 - QA PR security #1 dan #2 masih pending; belum ada test harness otomatis khusus.
 - Belum ada lowongan nyata yang diverifikasi.
 - Draft ini tidak mengubah environment, database, domain, atau deployment Production.
+
+
+## Signed upload token timing
+- Supabase signed upload URLs default to a 2-hour lifetime. The intent record remains valid for 2 hours, and cleanup only deletes expired unused uploads after an additional safety window so a still-valid token cannot create an orphaned CV after its intent has already been deleted.

@@ -19,7 +19,7 @@ export async function GET(request: NextRequest) {
     const now = new Date().toISOString();
     const today = now.slice(0, 10);
     const expiredIntents = await recruitmentDb<Array<{ id: string; storage_path: string }>>(
-      "/candidate_upload_intents?select=id,storage_path&consumed_at=is.null&expires_at=lt." + encodeURIComponent(now) + "&limit=100"
+      "/candidate_upload_intents?select=id,storage_path&consumed_at=is.null&expires_at=lt." + encodeURIComponent(new Date(Date.now() - 3 * 60 * 60 * 1000).toISOString()) + "&limit=100"
     );
     for (const intent of expiredIntents) {
       await deleteCandidateCv(intent.storage_path);
