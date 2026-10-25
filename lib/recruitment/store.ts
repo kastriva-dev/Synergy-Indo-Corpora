@@ -2,6 +2,9 @@ import { randomUUID } from "node:crypto";
 
 export const CV_BUCKET = "candidate-cvs";
 export const MAX_CV_BYTES = 5 * 1024 * 1024;
+
+// Fail closed until the approved privacy notice is finalized in code.
+const PRIVACY_NOTICE_APPROVED_IN_CODE = false;
 export type RecruitmentJob = {
   id: string; slug: string; title: string; country: string; category: string; summary: string;
   description: string; requirements: string; image_url: string | null; application_deadline: string | null;
@@ -40,7 +43,7 @@ export function isRecruitmentReady(): boolean {
   const redisUrl = process.env.UPSTASH_REDIS_REST_URL || process.env.UPSTASH_REDIS_REST_KV_REST_API_URL;
   const redisToken = process.env.UPSTASH_REDIS_REST_TOKEN || process.env.UPSTASH_REDIS_REST_KV_REST_API_TOKEN;
   const retention = Number(process.env.CANDIDATE_RETENTION_DAYS);
-  return isRecruitmentBackendConfigured() && Boolean(redisUrl && redisToken) &&
+  return PRIVACY_NOTICE_APPROVED_IN_CODE && isRecruitmentBackendConfigured() && Boolean(redisUrl && redisToken) &&
     Boolean(process.env.ADMIN_SESSION_SECRET && process.env.GOOGLE_CLIENT_ID && process.env.ADMIN_ALLOWED_EMAILS) &&
     process.env.CANDIDATE_PRIVACY_NOTICE_APPROVED === "true" &&
     Boolean(process.env.CANDIDATE_PRIVACY_NOTICE_VERSION?.trim()) &&
@@ -48,7 +51,7 @@ export function isRecruitmentReady(): boolean {
 }
 
 export function publicPrivacyNoticeVersion(): string {
-  if (process.env.CANDIDATE_PRIVACY_NOTICE_APPROVED !== "true") return "";
+  if (!PRIVACY_NOTICE_APPROVED_IN_CODE || process.env.CANDIDATE_PRIVACY_NOTICE_APPROVED !== "true") return "";
   return process.env.CANDIDATE_PRIVACY_NOTICE_VERSION?.trim().slice(0, 80) || "";
 }
 
@@ -235,7 +238,7 @@ export function validRetentionDays(): number {
 }
 
 export function activePrivacyNoticeVersion(): string {
-  if (process.env.CANDIDATE_PRIVACY_NOTICE_APPROVED !== "true") throw new Error("Pemberitahuan privasi belum disetujui.");
+  if (!PRIVACY_NOTICE_APPROVED_IN_CODE || process.env.CANDIDATE_PRIVACY_NOTICE_APPROVED !== "true") throw new Error("Pemberitahuan privasi belum disetujui.");
   const value = process.env.CANDIDATE_PRIVACY_NOTICE_VERSION?.trim();
   if (!value || value.length > 80) throw new Error("Versi pemberitahuan privasi belum dikonfigurasi.");
   return value;

@@ -183,7 +183,7 @@ export default function PremiumHome({ content, jobs, recruitmentReady, privacyNo
 
   return (
     <main ref={rootRef} id="top" className="sg-site">
-      <div className="preview-ribbon"><span className="preview-dot" /> PRATINJAU DESAIN · DATA POSISI MASIH CONTOH</div>
+      <div className="preview-ribbon"><span className="preview-dot" /> {jobs.length > 0 ? "SISTEM REKRUTMEN · LOWONGAN DARI PANEL ADMIN" : "SISTEM REKRUTMEN · BELUM ADA LOWONGAN AKTIF"}</div>
       <header className="site-header">
         <a className="sg-brand" href="#top" aria-label="Sinergi Global, kembali ke atas">
           <span className="sg-brand__mark">SG<span>.</span></span>
@@ -339,7 +339,7 @@ export default function PremiumHome({ content, jobs, recruitmentReady, privacyNo
             <div className="section-kicker section-kicker--light reveal"><span>04</span><span className="section-kicker__line" /> NEGARA TUJUAN</div>
             <h2 className="display-title reveal">LANGKAH ANDA.<br /><span>CAKRAWALA BARU.</span></h2>
             <p className="reveal">Daftar negara mengikuti lowongan aktif yang telah dipublikasikan oleh tim rekrutmen.</p>
-            <a className="button button--lime reveal" href="#peluang">Lihat contoh posisi <ArrowRight size={17} /></a>
+            <a className="button button--lime reveal" href="#peluang">Lihat lowongan aktif <ArrowRight size={17} /></a>
           </div>
           <div className="country-list">
             {countries.map((country, index) => (
@@ -428,10 +428,10 @@ export default function PremiumHome({ content, jobs, recruitmentReady, privacyNo
               <div className="form-field"><label htmlFor="candidate-email">Email</label><input id="candidate-email" name="email" type="email" autoComplete="email" placeholder="nama@email.com" /></div>
             </div>
             <div className="form-row">
-              <div className="form-field"><label htmlFor="candidate-country">Negara tujuan</label><select id="candidate-country" name="country" value={targetCountry} onChange={(event) => setTargetCountry(event.target.value)} required><option value="">Pilih negara tujuan</option>{countries.map((country) => <option key={country.name} value={country.name}>{country.flag} {country.name}</option>)}</select></div>
+              <div className="form-field"><label htmlFor="candidate-country">Negara tujuan</label><select id="candidate-country" name="country" value={targetCountry} onChange={(event) => setTargetCountry(event.target.value)} disabled={!recruitmentReady || Boolean(selectedPosition) || isSubmitting} required><option value="">Pilih negara tujuan</option>{countries.map((country) => <option key={country.name} value={country.name}>{country.flag} {country.name}</option>)}</select></div>
               <div className="form-field"><label htmlFor="candidate-position">Bidang / posisi</label><select id="candidate-position" name="position" value={selectedPosition} onChange={(event) => { setSelectedPosition(event.target.value); const job = jobs.find((item) => item.id === event.target.value); if (job) setTargetCountry(job.country); }} required><option value="">Pilih lowongan aktif</option>{jobs.map((job) => <option key={job.id} value={job.id}>{job.title} — {job.country}</option>)}</select></div>
             </div>
-            <div className="form-field"><label htmlFor="candidate-cv">Unggah CV <span>PDF / DOC / DOCX · Maks. 5 MB</span></label><label className="file-drop" htmlFor="candidate-cv"><UploadCloud size={23} /><strong>{cvName || "Pilih CV PDF Anda"}</strong><small>{cvName ? "File siap untuk diunggah" : "PDF saja · maksimal 5 MB"}</small><input id="candidate-cv" name="cv" type="file" accept="application/pdf,.pdf" required disabled={!recruitmentReady || isSubmitting} onChange={async (event) => { const file = event.currentTarget.files?.[0]; if (!file) { setCvName(""); setCvFile(null); return; } if (file.size > 5 * 1024 * 1024 || file.type !== "application/pdf" || !file.name.toLowerCase().endsWith(".pdf")) { setFormMessage("CV harus berupa PDF dengan ukuran maksimal 5 MB."); event.currentTarget.value = ""; setCvName(""); setCvFile(null); return; } const header = new Uint8Array(await file.slice(0, 5).arrayBuffer()); if (String.fromCharCode(...header) !== "%PDF-") { setFormMessage("Isi file bukan PDF yang valid."); event.currentTarget.value = ""; setCvName(""); setCvFile(null); return; } setCvFile(file); setCvName(file.name); setFormMessage(""); }} /></label></div>
+            <div className="form-field"><label htmlFor="candidate-cv">Unggah CV <span>PDF · Maks. 5 MB</span></label><label className="file-drop" htmlFor="candidate-cv"><UploadCloud size={23} /><strong>{cvName || "Pilih CV PDF Anda"}</strong><small>{cvName ? "File siap untuk diunggah" : "PDF saja · maksimal 5 MB"}</small><input id="candidate-cv" name="cv" type="file" accept="application/pdf,.pdf" required disabled={!recruitmentReady || isSubmitting} onChange={async (event) => { const input = event.currentTarget; const file = input.files?.[0]; if (!file) { setCvName(""); setCvFile(null); return; } if (file.size > 5 * 1024 * 1024 || file.type !== "application/pdf" || !file.name.toLowerCase().endsWith(".pdf")) { setFormMessage("CV harus berupa PDF dengan ukuran maksimal 5 MB."); input.value = ""; setCvName(""); setCvFile(null); return; } const header = new Uint8Array(await file.slice(0, 5).arrayBuffer()); if (String.fromCharCode(...header) !== "%PDF-") { setFormMessage("Isi file bukan PDF yang valid."); input.value = ""; setCvName(""); setCvFile(null); return; } setCvFile(file); setCvName(file.name); setFormMessage(""); }} /></label></div>
             <div className="sr-only" aria-hidden="true"><label htmlFor="candidate-website">Biarkan kolom ini kosong</label><input id="candidate-website" name="website" autoComplete="off" tabIndex={-1} /></div>
             <label className="consent-check"><input type="checkbox" name="consent" required disabled={!recruitmentReady || isSubmitting} /><span>Saya telah membaca <a href="/privasi" target="_blank" rel="noreferrer">Pemberitahuan Privasi Kandidat</a> dan menyetujui pemrosesan data untuk proses rekrutmen.</span></label>
             <button className="button button--lime registration-submit" type="submit" disabled={isSubmitting || !recruitmentReady || jobs.length === 0}>{isSubmitting ? "MENGIRIM..." : "KIRIM LAMARAN"} <ArrowRight size={18} /></button>
@@ -458,7 +458,7 @@ export default function PremiumHome({ content, jobs, recruitmentReady, privacyNo
           <div className="footer-main">
             <a className="sg-brand sg-brand--footer" href="#top"><span className="sg-brand__mark">SG<span>.</span></span><span className="sg-brand__name">SINERGI GLOBAL<small>CAREER OPPORTUNITIES</small></span></a>
             <p>Menghubungkan keterampilan, persiapan, dan informasi peluang karier internasional dengan lebih terarah.</p>
-            <div className="footer-links"><span>JELAJAHI</span><a href="#bidang">Bidang kerja</a><a href="#peluang">Contoh posisi</a><a href="#proses">Alur proses</a><a href="#berita">Berita & panduan</a></div>
+            <div className="footer-links"><span>JELAJAHI</span><a href="#bidang">Bidang kerja</a><a href="#peluang">Lowongan aktif</a><a href="#proses">Alur proses</a><a href="#berita">Berita & panduan</a></div>
             <div className="footer-social"><span>MEDIA SOSIAL</span><div><span aria-label="Instagram, tautan resmi menyusul"><Instagram size={18} /></span><span aria-label="LinkedIn, tautan resmi menyusul"><Linkedin size={18} /></span><span aria-label="Informasi grup perusahaan"><Building2 size={18} /></span></div><small>Tautan resmi menyusul</small></div>
           </div>
           <div className="footer-group-note">PT SINERGI CORPORA GROUP · JAVA INDO CORPORA <span>Logo dan hubungan grup perlu disesuaikan dengan aset resmi.</span></div>

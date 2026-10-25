@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAdminSession } from "@/lib/admin/auth";
 import { checkRateLimit, rateLimitResponse } from "@/lib/admin/rate-limit";
-import { getCandidateApplication, getCandidateCvBytes, isRecruitmentReady, writeCandidateAudit } from "@/lib/recruitment/store";
+import { getCandidateApplication, getCandidateCvBytes, isRecruitmentBackendConfigured, writeCandidateAudit } from "@/lib/recruitment/store";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -10,7 +10,7 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-
 export async function GET(request: NextRequest, context: { params: Promise<{ id: string }> }) {
   const session = await getAdminSession();
   if (!session) return NextResponse.json({ error: "Login admin diperlukan." }, { status: 401 });
-  if (!isRecruitmentReady()) return NextResponse.json({ error: "Backend rekrutmen belum siap." }, { status: 503 });
+  if (!isRecruitmentBackendConfigured()) return NextResponse.json({ error: "Backend rekrutmen belum siap." }, { status: 503 });
   const blocked = rateLimitResponse(await checkRateLimit(request, "candidate-cv-download", 20, 600, session.email));
   if (blocked) return blocked;
   const { id } = await context.params;

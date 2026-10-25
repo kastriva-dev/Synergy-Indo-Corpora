@@ -33,7 +33,7 @@ Jangan masukkan secret ke Git, PR, screenshot atau chat.
 - Perusahaan/legal harus menyetujui naskah dan versi privasi.
 - Konfirmasi semua lowongan, kontak, foto/video, brand, legalitas serta domain resmi.
 - Tetapkan pemilik operasional untuk permintaan data, insiden, backup, dan restore.
-Tanpa approval privasi, versi, masa retensi, database, Storage, Redis, atau CRON_SECRET, endpoint lamaran tetap mati.
+Endpoint lamaran tetap mati kecuali pemberitahuan privasi disetujui perusahaan, environment menyediakan versi dan masa retensi yang disetujui, database/Storage/Redis/cron siap, serta konstanta `PRIVACY_NOTICE_APPROVED_IN_CODE` dalam kode diubah menjadi true bersamaan dengan review dan finalisasi naskah. Variabel environment saja tidak dapat mengaktifkan pengumpulan data.
 
 ## Uji wajib Preview
 - Lamaran uji menghasilkan satu record dan CV tertaut.

@@ -9,7 +9,7 @@ export default async function Page() {
   let jobs: RecruitmentJob[] = [];
   let recruitmentReady = false;
   try {
-    recruitmentReady = await checkRecruitmentServiceReady();
+    recruitmentReady = content.source !== "demo" && await checkRecruitmentServiceReady();
     jobs = await getPublishedJobs();
   } catch {
     jobs = [];

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAdminSession, sameOrigin } from "@/lib/admin/auth";
 import { checkRateLimit, rateLimitResponse } from "@/lib/admin/rate-limit";
-import { isRecruitmentReady, recruitmentDb } from "@/lib/recruitment/store";
+import { isRecruitmentBackendConfigured, recruitmentDb } from "@/lib/recruitment/store";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -9,7 +9,7 @@ export const dynamic = "force-dynamic";
 export async function GET(request: NextRequest) {
   const session = await getAdminSession();
   if (!session) return NextResponse.json({ error: "Login admin diperlukan." }, { status: 401 });
-  if (!isRecruitmentReady()) return NextResponse.json({ error: "Backend rekrutmen belum siap." }, { status: 503 });
+  if (!isRecruitmentBackendConfigured()) return NextResponse.json({ error: "Backend rekrutmen belum siap." }, { status: 503 });
   const blocked = rateLimitResponse(await checkRateLimit(request, "candidate-admin-read", 60, 60, session.email));
   if (blocked) return blocked;
   const params = new URL(request.url).searchParams;
