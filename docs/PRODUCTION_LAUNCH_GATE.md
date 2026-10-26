@@ -1,6 +1,10 @@
 # Sinergi Global — Production Launch Gate
 
-Status: DRAFT / RELEASE BLOCKED. A green CI run does not establish that Firebase permissions, candidate privacy or complete end-to-end workflows have passed.
+Status: DRAFT / FULL OPERATIONAL RELEASE BLOCKED. A green CI run does not establish that Firebase permissions, candidate privacy or complete end-to-end workflows have passed.
+
+## Temporary presentation release (limited scope)
+
+The existing `synergy-indo-corpora.vercel.app` alias may be used for a temporary, unindexed company-site presentation only. The public CMS can read `GAS_WEB_APP_URL` for site/program/gallery fields; if GAS still contains legacy Synergy Indo Corpora/LPK content, the runtime must use clearly labelled fallback content instead of publishing the old brand under the new name. Candidate application submission and CV upload remain disabled. This temporary presentation is not approval for public recruitment operations, indexing, or collection of personal data. Keep `robots` set to `noindex` until the legal and operational release gates below are completed.
 
 ## Current target architecture
 
