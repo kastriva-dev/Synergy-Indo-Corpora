@@ -19,7 +19,7 @@ export default function WalkingApplicant() {
         <span className="walking-applicant-stage__rule" />
       </div>
       <div className="walking-applicant-stage__path" />
-      <div className="walking-applicant" onAnimationIteration={alternateCharacter}>
+      <div className={`walking-applicant ${gender === "woman" ? "is-woman" : "is-man"}`} onAnimationIteration={alternateCharacter}>
         <svg
           className={`walking-applicant__figure walking-applicant__figure--${gender}`}
           viewBox="0 0 160 220"
