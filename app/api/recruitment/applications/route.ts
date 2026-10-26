@@ -5,6 +5,7 @@ import {
   activePrivacyNoticeVersion, getPendingUploadIntent, getPublishedJob, isRecruitmentReady,
   submitCandidateApplication, validRetentionDays, verifyStoredPdf,
 } from "@/lib/recruitment/store";
+import { readRequestBodyLimited, RequestBodyTooLargeError } from "@/lib/http/read-request-body-limited";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -23,9 +24,12 @@ export async function POST(request: NextRequest) {
   if (!isRecruitmentReady()) return NextResponse.json({ error: "Pendaftaran kandidat belum diaktifkan." }, { status: 503, headers: { "Cache-Control": "no-store" } });
 
   try {
-    const raw = await request.text();
-    if (raw.length > 8000) return NextResponse.json({ error: "Permintaan terlalu besar." }, { status: 413 });
-    const body = JSON.parse(raw) as Record<string, unknown>;
+    const raw = await readRequestBodyLimited(request, 8000);
+    const parsed: unknown = JSON.parse(raw.toString("utf8"));
+    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+      return NextResponse.json({ error: "Permintaan tidak valid." }, { status: 400, headers: { "Cache-Control": "no-store" } });
+    }
+    const body = parsed as Record<string, unknown>;
     if (typeof body.website === "string" && body.website.trim()) return NextResponse.json({ ok: true, reference: "received" }, { status: 201, headers: { "Cache-Control": "no-store" } });
 
     const fullName = cleanText(body.name, 120);
@@ -55,7 +59,13 @@ export async function POST(request: NextRequest) {
       privacyNoticeVersion: privacyVersion, retentionDays: validRetentionDays(),
     });
     return NextResponse.json({ ok: true, reference: result.id }, { status: 201, headers: { "Cache-Control": "no-store" } });
-  } catch {
+  } catch (error) {
+    if (error instanceof RequestBodyTooLargeError) {
+      return NextResponse.json({ error: "Permintaan terlalu besar." }, { status: 413, headers: { "Cache-Control": "no-store" } });
+    }
+    if (error instanceof SyntaxError) {
+      return NextResponse.json({ error: "Format permintaan tidak valid." }, { status: 400, headers: { "Cache-Control": "no-store" } });
+    }
     return NextResponse.json({ error: "Lamaran belum dapat disimpan. Periksa data Anda atau coba lagi nanti." }, { status: 503, headers: { "Cache-Control": "no-store" } });
   }
 }
