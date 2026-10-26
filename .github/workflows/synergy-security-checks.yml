@@ -17,7 +17,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     env:
-      # Build uses demo fallback only; no production GAS or OAuth secrets.
+      # Build uses demo fallback only; no production or staging credentials.
       CI: "true"
     steps:
       - uses: actions/checkout@v4
@@ -29,6 +29,8 @@ jobs:
         run: npm ci
       - name: Audit dependency vulnerabilities
         run: npm audit --audit-level=high
+      - name: Check migration utility syntax
+        run: node --check scripts/migrate-gas-cms-to-firebase.mjs
       - name: TypeScript check
         run: npm run typecheck
       - name: Production build

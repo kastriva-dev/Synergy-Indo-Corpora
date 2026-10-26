@@ -7,7 +7,7 @@ This implementation uses Cloud Firestore for site CMS data, vacancies, applicati
 1. Create or select a Firebase project owned by Sinergi Global / PT Sinergi Corpora Group. Kastriva should be a delegated developer rather than the permanent owner of business data and payment details.
 2. Create a separate staging project first. Agree who pays cloud invoices and who may access candidate data.
 3. Enable Cloud Firestore and select the database location only after the company reviews residency, latency and legal requirements. Location is a durable decision.
-4. Create the default Cloud Storage bucket. Cloud Storage for Firebase requires the Blaze pay-as-you-go plan and a linked Cloud Billing account. Costs are separate from the Rp16,000,000 development fee.
+4. Create the default Cloud Storage bucket. Cloud Storage for Firebase requires the Blaze pay-as-you-go plan and a linked Cloud Billing account. Costs are separate from the agreed website development fee. See Firebase's current Cloud Storage billing requirements at https://firebase.google.com/docs/storage/faqs-storage-changes-announced-sept-2024.
 5. Enable Firebase Authentication and Google as a sign-in provider. Add the relevant staging/production domains to Authorized domains.
 6. Register the current web app and obtain its Firebase Web API key. Restrict the key to necessary APIs and approved sites. It is not a substitute for protecting the server key.
 
@@ -33,11 +33,19 @@ This implementation uses Cloud Firestore for site CMS data, vacancies, applicati
 
 The supplied Firestore and Storage rules deny direct client reads/writes. Server calls use the service account and are governed by IAM plus the application's session, origin, validation and rate-limit controls.
 
-## 4. Existing content migration
+## 4. Migrating existing CMS content safely
 
-The backend switch does not automatically migrate existing Google Sheets or Drive data. Export only the approved public CMS site, program and gallery records from the old source, review them with the client, then import them into the collections listed above. Preserve item IDs where practical, verify record counts and image references, and check draft/published behavior. Existing approved Unsplash/Drive media URLs remain accepted for compatibility; new CMS uploads use Firebase Storage.
+A no-dependency migration utility is included at scripts/migrate-gas-cms-to-firebase.mjs. It reads only CMS site, programs and gallery records from the old private GAS admin gateway. It never requests candidate records or CVs.
 
-Do not migrate candidate records or CVs as part of the initial content import. No real candidate data should be used before the company approves controller/contact information, privacy notice, storage ownership, retention and deletion policy.
+1. Keep the legacy GAS admin deployment available for the one-time export. Use its server-side URL and secret locally only. Do not put the secret into the example environment, GitHub, Vercel client variables or chat.
+2. In a local uncommitted .env.local, temporarily define GAS_ADMIN_WEB_APP_URL and GAS_ADMIN_SECRET together with staging Firebase values. The live website runtime does not use the legacy GAS variables.
+3. Preview the export first: node --env-file=.env.local scripts/migrate-gas-cms-to-firebase.mjs
+4. Review the summary and make sure the selected Firebase project is the staging project owned by the client. The default run does not write data.
+5. Only after checking the summary and a backup, run: node --env-file=.env.local scripts/migrate-gas-cms-to-firebase.mjs --apply
+6. Verify site text, image URLs, program/gallery counts, preserved IDs, and published/draft visibility in Firestore and Vercel Preview. Keep the legacy spreadsheet/export until the company signs off.
+7. If an image or field is rejected by validation, review it with the company and edit the source deliberately rather than weakening the URL allowlist.
+
+The migration upserts approved CMS documents by existing IDs so repeated runs update the same records. It does not migrate applicant records, CV files or admin account secrets. Existing approved Unsplash/Drive image URLs remain accepted; new CMS uploads use Firebase Storage.
 
 ## 5. Preview configuration and checks
 
@@ -49,7 +57,7 @@ Do not migrate candidate records or CVs as part of the initial content import. N
 
 ## 6. Billing and monitoring
 
-Use the client's billing account. Configure budget notifications and review Firestore operations, stored bytes, storage download/egress, retention/deletion and any backup/export costs. Budget alerts notify the owner; they do not automatically guarantee that billing stops. Cloud service costs remain separate from the fixed development fee.
+Use the client's billing account. Configure budget notifications and review Firestore operations, stored bytes, storage download/egress, retention/deletion and any backup/export costs. Budget alerts notify the owner; they do not automatically guarantee that billing stops. Cloud service costs remain separate from the development fee.
 
 ## 7. Candidate privacy release gate
 
