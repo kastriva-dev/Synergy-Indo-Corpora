@@ -96,7 +96,7 @@ export async function getPublicContent(): Promise<PublicContent> {
     }
     const siteRaw = raw.site && typeof raw.site === "object" ? raw.site as Record<string, unknown> : {};
     const site = Object.fromEntries(Object.entries(fallbackContent.site).map(([key, value]) => [key, safeString(siteRaw[key], value)])) as SiteContent;
-    return { source: "gas", site, programs: coerceItems(raw.programs, fallbackContent.programs), gallery: coerceItems(raw.gallery, fallbackContent.gallery) };
+    return { source: "gas", site, programs: coerceItems(raw.programs, fallbackContent.programs), gallery: Array.isArray(raw.gallery) ? coerceItems<GalleryItem>(raw.gallery, []) : [] };
   } catch (error) {
     console.warn("Sinergi Global: GAS tidak tersedia, menampilkan konten pratinjau aman:", error instanceof Error ? error.message : "unknown error");
     return fallbackContent;
