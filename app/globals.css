@@ -587,6 +587,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
     --motion-rotate-y: 0deg;
     --motion-pointer-x: 50%;
     --motion-pointer-y: 50%;
+    position: relative;
     transform-style: preserve-3d;
     transform-origin: center;
     transition: transform .22s cubic-bezier(.2, .75, .25, 1), box-shadow .3s ease, border-color .25s ease;
