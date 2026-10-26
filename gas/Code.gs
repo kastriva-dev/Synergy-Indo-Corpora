@@ -1,5 +1,5 @@
 /**
- * SYNERGY INDO CORPORA | Public Content API (Stage 1)
+ * SINERGI GLOBAL | Public Content API (read-only)
  * by Kastriva
  *
  * PUBLIC READ-ONLY. Hanya mempublikasikan kolom terpilih dari sheet "site", "programs", "gallery".
@@ -23,12 +23,12 @@ function json_(body) {
 
 function doGet(e) {
   var resource = String((e && e.parameter && e.parameter.resource) || 'public');
-  if (resource === 'health') return json_({ ok: true, service: 'Synergy Public Content', version: '1.0' });
+  if (resource === 'health') return json_({ ok: true, service: 'Sinergi Global Public Content', version: '2.0' });
   if (resource !== 'public') return json_({ ok: false, error: 'Unknown resource' });
 
   try {
     var cache = CacheService.getScriptCache();
-    var existing = cache.get('SYNERGY_PUBLIC_V1');
+    var existing = cache.get('SINERGI_PUBLIC_V2');
     if (existing) return ContentService.createTextOutput(existing).setMimeType(ContentService.MimeType.JSON);
 
     var ss = getSpreadsheet_();
@@ -42,7 +42,7 @@ function doGet(e) {
     };
     var raw = JSON.stringify(payload);
     // CacheService per-entry dibatasi ukurannya; tidak wajib cache jika data membesar.
-    if (raw.length < 80000) cache.put('SYNERGY_PUBLIC_V1', raw, PUBLIC_CACHE_SECONDS);
+    if (raw.length < 80000) cache.put('SINERGI_PUBLIC_V2', raw, PUBLIC_CACHE_SECONDS);
     return ContentService.createTextOutput(raw).setMimeType(ContentService.MimeType.JSON);
   } catch (err) {
     console.error(err);
@@ -114,25 +114,23 @@ function setupSynergySpreadsheet() {
   if (!ss) throw new Error('Buka Apps Script dari Google Sheets: Extensions > Apps Script.');
   PropertiesService.getScriptProperties().setProperty(SPREADSHEET_PROPERTY, ss.getId());
 
+  // Safe blank defaults: do not publish invented company copy or stock photos by default.
+  // Existing sheets are preserved by createSheetIfMissing_ and are never overwritten.
   createSheetIfMissing_(ss, 'site', ['key', 'value', 'published'], [
-    ['hero_eyebrow', 'LEMBAGA PELATIHAN KERJA / COMPANY PROFILE', true],
-    ['hero_title_1', 'KOMPETENSI', true],
-    ['hero_title_2', 'UNTUK MASA', true],
-    ['hero_title_accent', 'DEPAN.', true],
-    ['hero_description', 'Bersama Synergy Indo Corpora, kembangkan kompetensi dan persiapkan masa depan. Ganti kalimat ini dengan profil resmi perusahaan.', true],
-    ['about_description', 'Tulis profil perusahaan yang telah disetujui di sini.', true],
+    ['hero_eyebrow', '', false],
+    ['hero_title_1', '', false],
+    ['hero_title_2', '', false],
+    ['hero_title_accent', '', false],
+    ['hero_description', '', false],
+    ['about_description', '', false],
     ['contact_whatsapp', '', false],
     ['contact_email', '', false],
     ['contact_address', '', false]
   ]);
-  createSheetIfMissing_(ss, 'programs', ['id', 'title', 'category', 'description', 'duration', 'image_url', 'published', 'order'], [
-    ['program-01', 'Pelatihan Keterampilan', 'PENGEMBANGAN', 'Contoh deskripsi, ganti dengan program resmi LPK.', 'Detail menyusul', 'https://images.unsplash.com/photo-1531482615713-2afd69097998?auto=format&fit=crop&w=1050&q=80', true, 1],
-    ['program-02', 'Persiapan Dunia Kerja', 'KARIER', 'Contoh deskripsi, ganti dengan program resmi LPK.', 'Detail menyusul', 'https://images.unsplash.com/photo-1556761175-b413da4baf72?auto=format&fit=crop&w=1050&q=80', true, 2]
-  ]);
-  createSheetIfMissing_(ss, 'gallery', ['id', 'title', 'category', 'image_url', 'published', 'order'], [
-    ['gallery-01', 'Proses Pembelajaran', 'KEGIATAN', 'https://images.unsplash.com/photo-1523240795612-9a054b0db644?auto=format&fit=crop&w=1200&q=80', true, 1],
-    ['gallery-02', 'Kolaborasi & Diskusi', 'KOLABORASI', 'https://images.unsplash.com/photo-1531482615713-2afd69097998?auto=format&fit=crop&w=1200&q=80', true, 2]
-  ]);
+  // Job listings are not yet part of the CMS schema; do not seed fake training programs.
+  createSheetIfMissing_(ss, 'programs', ['id', 'title', 'category', 'description', 'duration', 'image_url', 'published', 'order'], []);
+  // Official activity photos must be uploaded and approved before publication.
+  createSheetIfMissing_(ss, 'gallery', ['id', 'title', 'category', 'image_url', 'published', 'order'], []);
   // Privat: tidak boleh dibaca oleh API publik. Pendaftaran online baru diaktifkan pada tahap berikutnya.
   createSheetIfMissing_(ss, 'registrations', ['id','timestamp','full_name','phone','program_id','message','consent'], []);
   Logger.log('Setup selesai. Spreadsheet ID: ' + ss.getId());

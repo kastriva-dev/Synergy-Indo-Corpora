@@ -1,5 +1,5 @@
 /**
- * SYNERGY INDO CORPORA | PRIVATE ADMIN WRITE GATEWAY
+ * SINERGI GLOBAL | PRIVATE ADMIN WRITE GATEWAY
  * By Kastriva — separate Apps Script project from the public read-only GAS.
  *
  * Script Properties (do not commit their actual values):
@@ -127,7 +127,7 @@ function ensureSynergyMediaFolder_() {
   var props = PropertiesService.getScriptProperties();
   var id = props.getProperty('SYNERGY_MEDIA_FOLDER_ID');
   if (id) return DriveApp.getFolderById(id);
-  var folder = DriveApp.createFolder('SYNERGY_INDO_CORPORA_WEBSITE_MEDIA');
+  var folder = DriveApp.createFolder('SINERGI_GLOBAL_WEBSITE_MEDIA');
   props.setProperty('SYNERGY_MEDIA_FOLDER_ID', folder.getId());
   return folder;
 }

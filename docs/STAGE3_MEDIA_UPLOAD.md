@@ -1,7 +1,7 @@
-# Tahap 3.7 — Upload foto ke Google Drive (by Kastriva)
+# Sinergi Global — Upload foto ke Google Drive (by Kastriva)
 
 1. **Jangan mengganti konfigurasi GAS publik.** Di project `SYNERGY_ADMIN_API_PRIVATE`, backup dulu `Code.gs`, lalu ganti dengan `gas/AdminCode.gs` dari patch ini. Kode sebelumnya tetap dipertahankan dan ditambah upload.
-2. Simpan, pilih fungsi `setupSynergyMediaFolder` → Run → beri izin Google Drive. Fungsi hanya membuat folder jika `SYNERGY_MEDIA_FOLDER_ID` belum terisi; saat pertama kali run folder bernama `SYNERGY_INDO_CORPORA_WEBSITE_MEDIA` dibuat di Drive akun pemilik GAS. Cek Execution log untuk link folder. **Jangan share folder untuk edit publik.**
+2. Simpan, pilih fungsi `setupSynergyMediaFolder` → Run → beri izin Google Drive. Fungsi hanya membuat folder jika `SYNERGY_MEDIA_FOLDER_ID` belum terisi; saat pertama kali run folder bernama `SINERGI_GLOBAL_WEBSITE_MEDIA` dibuat di Drive akun pemilik GAS. Cek Execution log untuk link folder. **Jangan share folder untuk edit publik.**
 3. Deploy → Manage deployments → Edit → New version → Deploy. Pertahankan URL /exec yang sama.
 4. Salin berkas Next.js patch (folder `components/admin`, `app/api/admin/upload`, `app/admin/admin.css`) ke proyek lokal di branch `feature/admin-stage3-secure`. Backup/commit pekerjaan lokal dahulu. Jangan salin `.env.local`.
 5. `npm.cmd run typecheck` dan `npm.cmd run build`; jalankan `npm.cmd run dev`, login ke `/admin`. Program dan Galeri sekarang memakai pemilih foto lokal, bukan kolom URL.
