@@ -14,6 +14,7 @@ export default function CustomCursor() {
     const cursor = cursorRef.current;
     const ring = ringRef.current;
     const dot = dotRef.current;
+    const labelElement = cursor?.querySelector(".custom-cursor__label");
     if (!cursor || !ring || !dot) return;
 
     document.body.classList.add("custom-cursor-enabled");
@@ -37,6 +38,7 @@ export default function CustomCursor() {
       if (!target) {
         cursor.classList.remove("is-active");
         cursor.removeAttribute("data-label");
+        if (labelElement) labelElement.textContent = "";
         return;
       }
 
@@ -50,6 +52,7 @@ export default function CustomCursor() {
             : "OPEN");
 
       cursor.dataset.label = label;
+      if (labelElement) labelElement.textContent = label;
       cursor.classList.add("is-active");
     };
 
