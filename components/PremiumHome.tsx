@@ -127,8 +127,11 @@ const processSteps = [
 export default function PremiumHome({ content }: { content: PublicContent }) {
   const rootRef = useRef<HTMLElement>(null);
   const galleryTrackRef = useRef<HTMLDivElement>(null);
+  const menuToggleRef = useRef<HTMLButtonElement>(null);
   const sectorTickerRef = useRef<HTMLDivElement>(null);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [galleryCanScrollPrev, setGalleryCanScrollPrev] = useState(false);
+  const [galleryCanScrollNext, setGalleryCanScrollNext] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [countryFilter, setCountryFilter] = useState("Semua negara");
   const [categoryFilter, setCategoryFilter] = useState("Semua bidang");
@@ -155,6 +158,29 @@ export default function PremiumHome({ content }: { content: PublicContent }) {
       return matchesQuery && matchesCountry && matchesCategory;
     });
   }, [searchTerm, countryFilter, categoryFilter]);
+
+  useEffect(() => {
+    const track = galleryTrackRef.current;
+    if (!track) {
+      setGalleryCanScrollPrev(false);
+      setGalleryCanScrollNext(false);
+      return;
+    }
+
+    const updateControls = () => {
+      const maxScrollLeft = Math.max(0, track.scrollWidth - track.clientWidth);
+      setGalleryCanScrollPrev(track.scrollLeft > 4);
+      setGalleryCanScrollNext(maxScrollLeft - track.scrollLeft > 4);
+    };
+
+    updateControls();
+    track.addEventListener("scroll", updateControls, { passive: true });
+    window.addEventListener("resize", updateControls);
+    return () => {
+      track.removeEventListener("scroll", updateControls);
+      window.removeEventListener("resize", updateControls);
+    };
+  }, [content.gallery.length]);
 
   useEffect(() => {
     const ticker = sectorTickerRef.current;
@@ -307,12 +333,20 @@ export default function PremiumHome({ content }: { content: PublicContent }) {
   return (
     <main ref={rootRef} id="top" className="sg-site">
       <div className="preview-ribbon"><span className="preview-dot" /> {content.source === "gas" ? "CMS GOOGLE SHEETS · PENDAFTARAN DAN UNGGAH CV NONAKTIF" : "PRATINJAU DESAIN · DATA POSISI MASIH CONTOH"}</div>
-      <header className="site-header">
+      <header
+        className="site-header"
+        onKeyDown={(event) => {
+          if (event.key === "Escape" && menuOpen) {
+            setMenuOpen(false);
+            menuToggleRef.current?.focus();
+          }
+        }}
+      >
         <a className="sg-brand" href="#top" aria-label="Sinergi Global, kembali ke atas">
           <span className="sg-brand__mark">SG<span>.</span></span>
           <span className="sg-brand__name">SINERGI GLOBAL<small>CAREER OPPORTUNITIES</small></span>
         </a>
-        <nav className={"site-nav" + (menuOpen ? " is-open" : "")} aria-label="Navigasi utama">
+        <nav id="primary-navigation" className={"site-nav" + (menuOpen ? " is-open" : "")} aria-label="Navigasi utama">
           <a onClick={() => setMenuOpen(false)} href="#tentang">Tentang</a>
           <a onClick={() => setMenuOpen(false)} href="#bidang">Bidang kerja</a>
           <a onClick={() => setMenuOpen(false)} href="#peluang">Peluang kerja</a>
@@ -321,7 +355,7 @@ export default function PremiumHome({ content }: { content: PublicContent }) {
           <a onClick={() => setMenuOpen(false)} href="#berita">Berita</a>
         </nav>
         <a className="header-cta" href="#daftar">Informasi pendaftaran <ArrowUpRight size={16} /></a>
-        <button type="button" className="menu-toggle" aria-label={menuOpen ? "Tutup menu" : "Buka menu"} aria-expanded={menuOpen} onClick={() => setMenuOpen((value) => !value)}>
+        <button ref={menuToggleRef} type="button" className="menu-toggle" aria-label={menuOpen ? "Tutup menu" : "Buka menu"} aria-expanded={menuOpen} aria-controls="primary-navigation" onClick={() => setMenuOpen((value) => !value)}>
           {menuOpen ? <X size={23} /> : <Menu size={23} />}
         </button>
       </header>
@@ -522,8 +556,8 @@ export default function PremiumHome({ content }: { content: PublicContent }) {
               <p className="section-intro reveal">Cuplikan kegiatan, kolaborasi, dan pengembangan kompetensi yang menggambarkan perjalanan kandidat. Materi final mengikuti konten yang disetujui perusahaan.</p>
             </div>
             <div className="gallery-controls reveal" role="group" aria-label="Navigasi galeri aktivitas">
-              <button type="button" className="gallery-control gallery-control--prev" aria-label="Geser galeri ke kiri" disabled={content.gallery.length < 2} onClick={() => scrollGallery(-1)}><ArrowRight size={18} /></button>
-              <button type="button" className="gallery-control gallery-control--next" aria-label="Geser galeri ke kanan" disabled={content.gallery.length < 2} onClick={() => scrollGallery(1)}><ArrowRight size={18} /></button>
+              <button type="button" className="gallery-control gallery-control--prev" aria-label="Geser galeri ke kiri" disabled={!galleryCanScrollPrev} onClick={() => scrollGallery(-1)}><ArrowRight size={18} /></button>
+              <button type="button" className="gallery-control gallery-control--next" aria-label="Geser galeri ke kanan" disabled={!galleryCanScrollNext} onClick={() => scrollGallery(1)}><ArrowRight size={18} /></button>
             </div>
           </div>
           {content.gallery.length ? (
