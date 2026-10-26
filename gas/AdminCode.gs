@@ -14,6 +14,7 @@
 var ADMIN_SITE_KEYS = ["hero_eyebrow", "hero_title_1", "hero_title_2", "hero_title_accent", "hero_description", "about_description", "contact_whatsapp", "contact_email", "contact_address"];
 var ADMIN_PROGRAM_KEYS = ["id", "title", "category", "description", "duration", "image_url", "published", "order"];
 var ADMIN_GALLERY_KEYS = ["id", "title", "category", "image_url", "published", "order"];
+var ADMIN_JOB_KEYS = ["id", "title", "country", "category", "summary", "image_url", "published", "order"];
 
 function adminJson_(body) {
   return ContentService.createTextOutput(JSON.stringify(body)).setMimeType(ContentService.MimeType.JSON);
@@ -78,13 +79,17 @@ function upsertItem_(name, allowedKeys, data) {
   if (data.published && !data.image_url) throw new Error("Foto wajib diunggah sebelum publikasi.");
   if (typeof data.order !== "number" || data.order < 0 || data.order > 9999 || Math.floor(data.order) !== data.order) throw new Error("Urutan tidak valid.");
   if (name === "programs" && (typeof data.description !== "string" || data.description.length > 600 || typeof data.duration !== "string" || data.duration.length > 100)) throw new Error("Deskripsi atau durasi tidak valid.");
+  if (name === "jobs" && (typeof data.country !== "string" || !data.country.trim() || data.country.length > 100 ||
+      typeof data.category !== "string" || !data.category.trim() || data.category.length > 100 ||
+      typeof data.summary !== "string" || !data.summary.trim() || data.summary.length > 600)) throw new Error("Negara, bidang, atau ringkasan lowongan tidak valid.");
   var sheet = postSource_(name);
   var rows = sheet.getDataRange().getValues();
   var headers = rows[0].map(function(h){ return String(h).trim(); });
   if (allowedKeys.some(function(k){ return headers.indexOf(k) === -1; })) throw new Error("Struktur kolom sheet tidak valid.");
   var record = {};
   allowedKeys.forEach(function(key) {
-    record[key] = key === "published" ? data[key] : key === "order" ? data[key] : safeText_(data[key], key === "image_url" ? 700 : (key === "description" ? 600 : 160));
+    var maxLength = key === "image_url" ? 700 : (key === "description" || key === "summary" ? 600 : (key === "country" || key === "category" || key === "duration" ? 100 : 160));
+    record[key] = key === "published" ? data[key] : key === "order" ? data[key] : safeText_(data[key], maxLength);
   });
   var targetRow = -1;
   var idCol = headers.indexOf("id");
@@ -119,6 +124,7 @@ function readAdminContent_() {
   return { ok: true, data: { site: site,
     programs: readAdminItems_("programs", ADMIN_PROGRAM_KEYS),
     gallery: readAdminItems_("gallery", ADMIN_GALLERY_KEYS),
+    jobs: readAdminItems_("jobs", ADMIN_JOB_KEYS),
   }};
 }
 
@@ -187,9 +193,10 @@ function doPost(e) {
     else if (body.action === "update_site") result = writeSite_(body.data);
     else if (body.action === "upsert_program") result = upsertItem_("programs", ADMIN_PROGRAM_KEYS, body.data);
     else if (body.action === "upsert_gallery") result = upsertItem_("gallery", ADMIN_GALLERY_KEYS, body.data);
+    else if (body.action === "upsert_job") result = upsertItem_("jobs", ADMIN_JOB_KEYS, body.data);
     else if (body.action === "upload_image") result = uploadSynergyImage_(body);
     else result = { ok: false, error: "Unsupported action" };
-    if (result && result.ok && ["update_site", "upsert_program", "upsert_gallery", "upload_image"].indexOf(body.action) !== -1) {
+    if (result && result.ok && ["update_site", "upsert_program", "upsert_gallery", "upsert_job", "upload_image"].indexOf(body.action) !== -1) {
       auditAdminChange_(body.action, result.id || result.file_id || "site");
     }
     return adminJson_(result);

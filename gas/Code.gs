@@ -2,7 +2,7 @@
  * SINERGI GLOBAL | Public Content API (read-only)
  * by Kastriva
  *
- * PUBLIC READ-ONLY. Hanya mempublikasikan kolom terpilih dari sheet "site", "programs", "gallery".
+ * PUBLIC READ-ONLY. Hanya mempublikasikan kolom terpilih dari sheet "site", "programs", "gallery", dan "jobs".
  * JANGAN tambahkan operasi admin/pendaftaran pada deployment publik ini.
  * Registrations disiapkan sebagai tab privat dan TIDAK pernah dikirim via endpoint.
  */
@@ -23,12 +23,12 @@ function json_(body) {
 
 function doGet(e) {
   var resource = String((e && e.parameter && e.parameter.resource) || 'public');
-  if (resource === 'health') return json_({ ok: true, service: 'Sinergi Global Public Content', version: '2.0' });
+  if (resource === 'health') return json_({ ok: true, service: 'Sinergi Global Public Content', version: '3.0' });
   if (resource !== 'public') return json_({ ok: false, error: 'Unknown resource' });
 
   try {
     var cache = CacheService.getScriptCache();
-    var existing = cache.get('SINERGI_PUBLIC_V2');
+    var existing = cache.get('SINERGI_PUBLIC_V3');
     if (existing) return ContentService.createTextOutput(existing).setMimeType(ContentService.MimeType.JSON);
 
     var ss = getSpreadsheet_();
@@ -37,12 +37,13 @@ function doGet(e) {
       data: {
         site: readSite_(ss),
         programs: readItems_(ss, 'programs', ['id', 'title', 'category', 'description', 'duration', 'image_url', 'published', 'order']),
-        gallery: readItems_(ss, 'gallery', ['id', 'title', 'category', 'image_url', 'published', 'order'])
+        gallery: readItems_(ss, 'gallery', ['id', 'title', 'category', 'image_url', 'published', 'order']),
+        jobs: readItems_(ss, 'jobs', ['id', 'title', 'country', 'category', 'summary', 'image_url', 'published', 'order'])
       }
     };
     var raw = JSON.stringify(payload);
     // CacheService per-entry dibatasi ukurannya; tidak wajib cache jika data membesar.
-    if (raw.length < 80000) cache.put('SINERGI_PUBLIC_V2', raw, PUBLIC_CACHE_SECONDS);
+    if (raw.length < 80000) cache.put('SINERGI_PUBLIC_V3', raw, PUBLIC_CACHE_SECONDS);
     return ContentService.createTextOutput(raw).setMimeType(ContentService.MimeType.JSON);
   } catch (err) {
     console.error(err);
@@ -127,10 +128,11 @@ function setupSynergySpreadsheet() {
     ['contact_email', '', false],
     ['contact_address', '', false]
   ]);
-  // Job listings are not yet part of the CMS schema; do not seed fake training programs.
+  // Existing tabs are preserved; a new jobs tab starts empty and publishes nothing by default.
   createSheetIfMissing_(ss, 'programs', ['id', 'title', 'category', 'description', 'duration', 'image_url', 'published', 'order'], []);
   // Official activity photos must be uploaded and approved before publication.
   createSheetIfMissing_(ss, 'gallery', ['id', 'title', 'category', 'image_url', 'published', 'order'], []);
+  createSheetIfMissing_(ss, 'jobs', ['id', 'title', 'country', 'category', 'summary', 'image_url', 'published', 'order'], []);
   // Privat: tidak boleh dibaca oleh API publik. Pendaftaran online baru diaktifkan pada tahap berikutnya.
   createSheetIfMissing_(ss, 'registrations', ['id','timestamp','full_name','phone','program_id','message','consent'], []);
   Logger.log('Setup selesai. Spreadsheet ID: ' + ss.getId());
