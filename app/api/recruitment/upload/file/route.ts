@@ -2,6 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { sameOrigin } from "@/lib/admin/auth";
 import { checkRateLimit, rateLimitResponse } from "@/lib/admin/rate-limit";
 import { isRecruitmentReady, MAX_CV_BYTES, uploadCandidateCv } from "@/lib/recruitment/store";
+import {
+  readRequestBodyLimited,
+  RequestBodyTooLargeError,
+} from "@/lib/http/read-request-body-limited";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -21,13 +25,16 @@ export async function POST(request: NextRequest) {
   if (contentLength > MAX_CV_BYTES) return NextResponse.json({ error: "Ukuran CV maksimal 3 MiB." }, { status: 413 });
 
   try {
-    const bytes = Buffer.from(await request.arrayBuffer());
+    const bytes = await readRequestBodyLimited(request, MAX_CV_BYTES);
     if (bytes.length < 8 || bytes.length > MAX_CV_BYTES || bytes.subarray(0, 5).toString("ascii") !== "%PDF-") {
       return NextResponse.json({ error: "Isi CV tidak valid atau ukurannya melebihi 3 MiB." }, { status: 400 });
     }
     await uploadCandidateCv(uploadId, bytes);
     return NextResponse.json({ ok: true }, { status: 201, headers: { "Cache-Control": "no-store" } });
-  } catch {
+  } catch (error) {
+    if (error instanceof RequestBodyTooLargeError) {
+      return NextResponse.json({ error: "Ukuran CV maksimal 3 MiB." }, { status: 413, headers: { "Cache-Control": "no-store" } });
+    }
     return NextResponse.json({ error: "CV belum dapat disimpan ke penyimpanan privat. Coba kembali." }, { status: 503, headers: { "Cache-Control": "no-store" } });
   }
 }
