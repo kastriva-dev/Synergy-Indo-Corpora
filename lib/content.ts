@@ -72,7 +72,7 @@ function coerceItems<T extends Program | GalleryItem>(items: unknown, fallbacks:
 
 function containsLegacyBrandContent(value: unknown): boolean {
   const serialized = (JSON.stringify(value) || "").toLowerCase();
-  return /synergy indo corpora|lembaga pelatihan kerja|\\blpk\\b/.test(serialized);
+  return /synergy indo corpora|lembaga pelatihan kerja|\blpk\b/.test(serialized);
 }
 
 export async function getPublicContent(): Promise<PublicContent> {
