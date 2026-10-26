@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 
-const CARD_SELECTOR = ".value-card, .work-card, .job-card, .news-card, .ceo-media";
+const CARD_SELECTOR = ".value-card, .work-card, .job-card, .news-card, .gallery-card, .ceo-media";
 
 export default function CardMotion() {
   useEffect(() => {
@@ -44,7 +44,7 @@ export default function CardMotion() {
 
       const x = Math.max(0, Math.min(1, (event.clientX - bounds.left) / bounds.width));
       const y = Math.max(0, Math.min(1, (event.clientY - bounds.top) / bounds.height));
-      const maxTilt = target.matches(".ceo-media") ? 4 : 6;
+      const maxTilt = target.matches(".ceo-media, .gallery-card") ? 4 : 6;
 
       target.style.setProperty("--motion-rotate-x", `${((0.5 - y) * maxTilt).toFixed(2)}deg`);
       target.style.setProperty("--motion-rotate-y", `${((x - 0.5) * maxTilt).toFixed(2)}deg`);

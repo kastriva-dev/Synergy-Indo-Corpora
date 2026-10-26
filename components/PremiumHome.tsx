@@ -126,6 +126,7 @@ const processSteps = [
 
 export default function PremiumHome({ content }: { content: PublicContent }) {
   const rootRef = useRef<HTMLElement>(null);
+  const galleryTrackRef = useRef<HTMLDivElement>(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [countryFilter, setCountryFilter] = useState("Semua negara");
@@ -177,10 +178,10 @@ export default function PremiumHome({ content }: { content: PublicContent }) {
       });
 
       const depthImages = gsap.utils.toArray<HTMLElement>(
-        ".job-card__image img, .news-card__image img, .ceo-media > img",
+        ".job-card__image img, .news-card__image img, .gallery-card__image img, .ceo-media > img",
       );
       depthImages.forEach((image) => {
-        const trigger = image.closest<HTMLElement>(".job-card, .news-card, .ceo-media") ?? image;
+        const trigger = image.closest<HTMLElement>(".job-card, .news-card, .gallery-card, .ceo-media") ?? image;
         gsap.fromTo(
           image,
           { "--image-parallax-y": "3%" },
@@ -203,7 +204,7 @@ export default function PremiumHome({ content }: { content: PublicContent }) {
       });
 
       const staggerGroups = gsap.utils.toArray<HTMLElement>(
-        ".about-values, .work-grid, .jobs-grid, .country-list, .process-list, .news-grid",
+        ".about-values, .work-grid, .jobs-grid, .country-list, .process-list, .news-grid, .gallery-track",
       );
       const groupedRevealElements = new Set<HTMLElement>();
       staggerGroups.forEach((group) => {
@@ -259,6 +260,16 @@ export default function PremiumHome({ content }: { content: PublicContent }) {
     setFormMessage("Pendaftaran kandidat belum dibuka. Data dan CV tidak dikirim atau disimpan.");
   }
 
+  function scrollGallery(direction: -1 | 1) {
+    const track = galleryTrackRef.current;
+    if (!track) return;
+    const firstCard = track.querySelector<HTMLElement>(".gallery-card");
+    const cardWidth = firstCard?.getBoundingClientRect().width ?? track.clientWidth * 0.82;
+    const gap = Number.parseFloat(window.getComputedStyle(track).columnGap) || 18;
+    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    track.scrollBy({ left: direction * (cardWidth + gap), behavior: reducedMotion ? "auto" : "smooth" });
+  }
+
   return (
     <main ref={rootRef} id="top" className="sg-site">
       <div className="preview-ribbon"><span className="preview-dot" /> {content.source === "gas" ? "CMS GOOGLE SHEETS · PENDAFTARAN DAN UNGGAH CV NONAKTIF" : "PRATINJAU DESAIN · DATA POSISI MASIH CONTOH"}</div>
@@ -272,6 +283,7 @@ export default function PremiumHome({ content }: { content: PublicContent }) {
           <a onClick={() => setMenuOpen(false)} href="#bidang">Bidang kerja</a>
           <a onClick={() => setMenuOpen(false)} href="#peluang">Peluang kerja</a>
           <a onClick={() => setMenuOpen(false)} href="#proses">Alur proses</a>
+          <a onClick={() => setMenuOpen(false)} href="#galeri">Galeri</a>
           <a onClick={() => setMenuOpen(false)} href="#berita">Berita</a>
         </nav>
         <a className="header-cta" href="#daftar">Informasi pendaftaran <ArrowUpRight size={16} /></a>
@@ -467,9 +479,45 @@ export default function PremiumHome({ content }: { content: PublicContent }) {
         </div>
       </section>
 
+      <section className="gallery-section section-space" id="galeri" aria-labelledby="gallery-title">
+        <div className="container">
+          <div className="section-kicker reveal"><span>07</span><span className="section-kicker__line" /> GALERI AKTIVITAS <span className="section-kicker__right">BEHIND EVERY JOURNEY</span></div>
+          <div className="gallery-heading-row">
+            <div className="gallery-heading-row__copy">
+              <h2 id="gallery-title" className="display-title reveal">DI BALIK SETIAP<br /><span>LANGKAH BESAR.</span></h2>
+              <p className="section-intro reveal">Cuplikan kegiatan, kolaborasi, dan pengembangan kompetensi yang menggambarkan perjalanan kandidat. Materi final mengikuti konten yang disetujui perusahaan.</p>
+            </div>
+            <div className="gallery-controls reveal" role="group" aria-label="Navigasi galeri aktivitas">
+              <button type="button" className="gallery-control gallery-control--prev" aria-label="Geser galeri ke kiri" disabled={content.gallery.length < 2} onClick={() => scrollGallery(-1)}><ArrowRight size={18} /></button>
+              <button type="button" className="gallery-control gallery-control--next" aria-label="Geser galeri ke kanan" disabled={content.gallery.length < 2} onClick={() => scrollGallery(1)}><ArrowRight size={18} /></button>
+            </div>
+          </div>
+          {content.gallery.length ? (
+            <div className="gallery-track" id="sinergi-gallery-track" ref={galleryTrackRef} tabIndex={0} role="list" aria-label="Galeri aktivitas Sinergi Global. Geser horizontal untuk melihat foto lainnya.">
+              {content.gallery.map((item, index) => (
+                <article className="gallery-card reveal" key={item.id} role="listitem" data-cursor="EXPLORE">
+                  <div className="gallery-card__image">
+                    <SafeMediaImage src={item.image_url} alt={(content.source === "demo" ? "Ilustrasi pratinjau: " : "") + item.title} loading="lazy" />
+                    <span className="gallery-card__index" aria-hidden="true">{String(index + 1).padStart(2, "0")}</span>
+                    <span className="gallery-card__category">{content.source === "demo" ? "ILUSTRASI PRATINJAU" : item.category}</span>
+                  </div>
+                  <div className="gallery-card__caption">
+                    <div><h3>{item.title}</h3><p>{content.source === "demo" ? "Aset ilustrasi untuk pratinjau desain." : "Materi galeri yang dikelola melalui CMS."}</p></div>
+                    <span className="gallery-card__arrow" aria-hidden="true"><ArrowUpRight size={19} /></span>
+                  </div>
+                </article>
+              ))}
+            </div>
+          ) : (
+            <div className="gallery-empty reveal"><span className="gallery-empty__index">07 / GALERI</span><p>Galeri aktivitas sedang disiapkan. Foto resmi akan ditampilkan setelah materi publikasi diterima dari perusahaan.</p></div>
+          )}
+          <p className="gallery-note reveal"><ShieldCheck size={16} /> {content.source === "demo" ? "Foto yang terlihat merupakan ilustrasi pratinjau. Ganti dengan foto resmi dan keterangan yang telah disetujui sebelum peluncuran." : "Pastikan setiap foto dan keterangannya telah diverifikasi serta disetujui perusahaan sebelum publikasi."}</p>
+        </div>
+      </section>
+
       <section className="news-section section-space" id="berita">
         <div className="container">
-          <div className="section-kicker reveal"><span>07</span><span className="section-kicker__line" /> KABAR & PANDUAN <span className="section-kicker__right">KNOW BEFORE YOU GO</span></div>
+          <div className="section-kicker reveal"><span>08</span><span className="section-kicker__line" /> KABAR & PANDUAN <span className="section-kicker__right">KNOW BEFORE YOU GO</span></div>
           <div className="section-heading-row">
             <h2 className="display-title reveal">BEKAL INFORMASI.<br /><span>LANGKAH LEBIH SIAP.</span></h2>
             <p className="section-intro reveal">Ruang untuk berita perusahaan, panduan kandidat, dan informasi terbaru. Artikel di bawah adalah contoh tampilan, bukan publikasi resmi.</p>
@@ -491,7 +539,7 @@ export default function PremiumHome({ content }: { content: PublicContent }) {
       <section className="registration-section section-space" id="daftar">
         <div className="container registration-layout">
           <div className="registration-copy">
-            <div className="section-kicker section-kicker--light reveal"><span>08</span><span className="section-kicker__line" /> FORM MINAT KANDIDAT</div>
+            <div className="section-kicker section-kicker--light reveal"><span>09</span><span className="section-kicker__line" /> FORM MINAT KANDIDAT</div>
             <h2 className="display-title reveal">MULAI DARI<br /><span>LANGKAH PERTAMA.</span></h2>
             <p className="reveal">Pendaftaran kandidat belum dibuka. Formulir dan unggah CV dinonaktifkan sampai backend, konten resmi, dan pemberitahuan privasi disetujui. Tidak ada data yang dikirim atau disimpan.</p>
             <div className="registration-points reveal"><span><CheckCircle2 size={17} /> Informasi kandidat</span><span><CheckCircle2 size={17} /> Bidang dan negara tujuan</span><span><CheckCircle2 size={17} /> CV belum diterima</span></div>
@@ -519,7 +567,7 @@ export default function PremiumHome({ content }: { content: PublicContent }) {
 
       <section className="contact-section section-space" id="kontak">
         <div className="container contact-layout">
-          <div><div className="section-kicker reveal"><span>09</span><span className="section-kicker__line" /> HUBUNGI SINERGI GLOBAL</div><h2 className="display-title reveal">TERHUBUNG.<br /><span>SIAP MELANGKAH.</span></h2></div>
+          <div><div className="section-kicker reveal"><span>10</span><span className="section-kicker__line" /> HUBUNGI SINERGI GLOBAL</div><h2 className="display-title reveal">TERHUBUNG.<br /><span>SIAP MELANGKAH.</span></h2></div>
           <div className="contact-card reveal">
             <p>Untuk pertanyaan resmi, gunakan kontak perusahaan yang sudah diverifikasi.</p>
             {whatsAppUrl ? <a href={whatsAppUrl} target="_blank" rel="noreferrer" className="contact-item"><span><Globe size={18} /></span><div><small>WHATSAPP RESMI</small><strong>Mulai percakapan</strong></div><ArrowUpRight size={17} /></a> : <div className="contact-item contact-item--muted"><span><Globe size={18} /></span><div><small>WHATSAPP</small><strong>Kontak resmi menyusul</strong></div></div>}

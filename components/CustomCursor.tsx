@@ -32,7 +32,7 @@ export default function CustomCursor() {
       if (!(event.target instanceof Element)) return;
 
       const target = event.target.closest(
-        "[data-cursor], a, button, [role='button'], .work-card, .job-card, .news-card, .country-row, .ceo-media",
+        "[data-cursor], a, button, [role='button'], .work-card, .job-card, .news-card, .gallery-card, .country-row, .ceo-media",
       );
 
       if (!target) {
@@ -45,7 +45,7 @@ export default function CustomCursor() {
       const customLabel = target.getAttribute("data-cursor");
       const label =
         customLabel ||
-        (target.matches(".job-card, .news-card, .ceo-media")
+        (target.matches(".job-card, .news-card, .gallery-card, .ceo-media")
           ? "VIEW"
           : target.matches(".work-card, .country-row")
             ? "EXPLORE"
