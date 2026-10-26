@@ -793,6 +793,38 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
     linear-gradient(180deg, #f7f9f5 0%, #edf3eb 68%, #e2ebe1 100%);
   isolation: isolate;
 }
+.walking-applicant-stage--video {
+  height: clamp(145px, 22vw, 220px);
+  margin: 14px 0 20px;
+  border-color: #e2e9e5;
+  background: linear-gradient(180deg, #fbfcfa 0%, #f1f5ef 100%);
+}
+.walking-applicant-video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  pointer-events: none;
+}
+.walking-applicant-stage--video.is-fallback .walking-applicant-video {
+  visibility: hidden;
+}
+.walking-applicant-stage--video.is-fallback .walking-applicant-track {
+  transform: none;
+  opacity: 1;
+  animation: none;
+  will-change: auto;
+}
+.walking-applicant-stage--video.is-fallback .walking-applicant {
+  left: 50%;
+  width: min(86px, 22vw);
+  transform: translateX(-50%);
+}
+.walking-applicant-stage--video.is-fallback .walking-applicant__figure,
+.walking-applicant-stage--video.is-fallback .walking-applicant__figure * {
+  animation: none !important;
+}
 .walking-applicant-stage__eyebrow {
   position: absolute;
   z-index: 1;
@@ -957,11 +989,15 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 
 @media (max-width: 560px) {
   .walking-applicant-stage { margin-top: 25px; }
+  .walking-applicant-stage--video { height: clamp(138px, 42vw, 182px); margin: 12px 0 18px; }
   .walking-applicant-stage__eyebrow { top: 11px; left: 12px; right: 12px; font-size: 7px; letter-spacing: .1em; }
   .walking-applicant-stage__rule { width: clamp(20px, 9vw, 52px); }
   .walking-applicant { bottom: 4px; }
   .walking-applicant-stage__path { bottom: 10px; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .walking-applicant-stage { display: none; }
+  .walking-applicant-stage--video .walking-applicant-video { display: none; }
+  .walking-applicant-stage--video .walking-applicant-track,
+  .walking-applicant-stage--video .walking-applicant__figure,
+  .walking-applicant-stage--video .walking-applicant__figure * { animation: none !important; }
 }

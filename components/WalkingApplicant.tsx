@@ -1,26 +1,79 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import type { SyntheticEvent } from "react";
 
 type ApplicantGender = "man" | "woman";
 
 export default function WalkingApplicant() {
-  const [gender, setGender] = useState<ApplicantGender>("man");
+  const [gender, setGender] = useState<ApplicantGender>("woman");
+  const [reducedMotion, setReducedMotion] = useState(false);
+  const [videoFailed, setVideoFailed] = useState(false);
+  const [videoReady, setVideoReady] = useState(false);
+
+  useEffect(() => {
+    const preference = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const updatePreference = () => setReducedMotion(preference.matches);
+    updatePreference();
+    preference.addEventListener("change", updatePreference);
+    return () => preference.removeEventListener("change", updatePreference);
+  }, []);
 
   function alternateCharacter() {
+    setVideoReady(false);
     setGender((current) => (current === "man" ? "woman" : "man"));
   }
 
+  function verifyVideoTransparency(event: SyntheticEvent<HTMLVideoElement>) {
+    const video = event.currentTarget;
+    try {
+      const canvas = document.createElement("canvas");
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      const context = canvas.getContext("2d", { willReadFrequently: true });
+      if (!context || !canvas.width || !canvas.height) throw new Error("Video frame unavailable");
+      context.drawImage(video, 0, 0);
+      // The top-left source pixel is part of the keyed green background.
+      // Browsers that ignore WebM alpha leave it opaque, so use the SVG fallback.
+      if (context.getImageData(0, 0, 1, 1).data[3] > 8) {
+        setVideoFailed(true);
+        return;
+      }
+      setVideoReady(true);
+    } catch {
+      setVideoFailed(true);
+    }
+  }
+
+  const showFallback = reducedMotion || videoFailed || !videoReady;
+
   return (
-    <div className="walking-applicant-stage" aria-hidden="true">
-      <div className="walking-applicant-stage__eyebrow">
-        <span className="walking-applicant-stage__pulse" />
-        <span>LANGKAH MENUJU PELUANG</span>
-        <span className="walking-applicant-stage__rule" />
-      </div>
-      <div className="walking-applicant-stage__path" />
-      <div className="walking-applicant-track" onAnimationIteration={alternateCharacter}>
-        <div className={`walking-applicant ${gender === "woman" ? "is-woman" : "is-man"}`}>
+    <div className={`walking-applicant-stage walking-applicant-stage--video${showFallback ? " is-fallback" : ""}`} aria-hidden="true">
+      {!reducedMotion && !videoFailed && (
+        <video
+          key={gender}
+          className="walking-applicant-video"
+          src={gender === "woman" ? "/media/applicants/applicant-female.webm" : "/media/applicants/applicant-male.webm"}
+          autoPlay
+          muted
+          playsInline
+          preload="auto"
+          tabIndex={-1}
+          onLoadedData={verifyVideoTransparency}
+          onEnded={alternateCharacter}
+          onError={() => setVideoFailed(true)}
+        />
+      )}
+      {showFallback && (
+        <>
+          <div className="walking-applicant-stage__eyebrow">
+            <span className="walking-applicant-stage__pulse" />
+            <span>LANGKAH MENUJU PELUANG</span>
+            <span className="walking-applicant-stage__rule" />
+          </div>
+          <div className="walking-applicant-stage__path" />
+          <div className="walking-applicant-track">
+            <div className={`walking-applicant ${gender === "woman" ? "is-woman" : "is-man"}`}>
         <svg
           className={`walking-applicant__figure walking-applicant__figure--${gender}`}
           viewBox="0 0 160 220"
@@ -122,8 +175,10 @@ export default function WalkingApplicant() {
             {gender === "woman" && <path d="M91 53 Q101 60 111 51 L108 58 L98 60 Z" fill="#332726" opacity=".9" />}
           </g>
         </svg>
-        </div>
-      </div>
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 }

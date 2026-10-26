@@ -441,7 +441,6 @@ export default function PremiumHome({ content }: { content: PublicContent }) {
           ) : (
             <div className="empty-results"><Search size={26} /><h3>{jobItems.length === 0 && content.source === "gas" ? "Belum ada lowongan resmi" : "Tidak ada lowongan yang cocok"}</h3><p>{jobItems.length === 0 && content.source === "gas" ? "Tim Sinergi Global belum menerbitkan posisi melalui CMS. Silakan kembali untuk melihat pembaruan." : "Coba kata kunci atau filter lain untuk melihat posisi yang tersedia pada daftar ini."}</p>{jobItems.length > 0 && <button type="button" className="text-link" onClick={() => { setSearchTerm(""); setCountryFilter("Semua negara"); setCategoryFilter("Semua bidang"); }}>Reset pencarian <ArrowRight size={16} /></button>}</div>
           )}
-          <WalkingApplicant />
         </div>
       </section>
 
@@ -578,6 +577,7 @@ export default function PremiumHome({ content }: { content: PublicContent }) {
               <div className="form-field"><label htmlFor="candidate-country">Negara tujuan</label><select id="candidate-country" name="country" value={targetCountry} onChange={(event) => setTargetCountry(event.target.value)} required disabled><option value="">Pilih negara</option>{countries.map((country) => <option key={country.name} value={country.name}>{country.flag} {country.name}</option>)}</select></div>
               <div className="form-field"><label htmlFor="candidate-position">Bidang / posisi</label><select id="candidate-position" name="position" value={selectedPosition} onChange={(event) => setSelectedPosition(event.target.value)} required disabled><option value="">Pilih contoh posisi</option>{jobItems.map((job) => <option key={job.id} value={job.title}>{job.title}</option>)}</select></div>
             </div>
+            <WalkingApplicant />
             <div className="form-field"><label htmlFor="candidate-cv">Unggah CV <span>PDF / DOC / DOCX · Maks. 5 MB</span></label><label className="file-drop" htmlFor="candidate-cv"><UploadCloud size={23} /><strong>{cvName || "Pilih file CV Anda"}</strong><small>Unggah CV belum tersedia</small><input id="candidate-cv" name="cv" type="file" disabled accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document" required onChange={(event) => { const file = event.currentTarget.files?.[0]; if (!file) { setCvName(""); return; } if (file.size > 5 * 1024 * 1024) { setFormMessage("Ukuran file melebihi 5 MB. Pilih CV yang lebih kecil."); event.currentTarget.value = ""; setCvName(""); return; } setCvName(file.name); setFormMessage(""); }} /></label></div>
             <label className="consent-check"><input type="checkbox" required disabled /><span>Pemberitahuan privasi resmi belum disetujui; formulir belum dapat digunakan.</span></label>
             <button className="button button--lime registration-submit" type="submit" disabled>Pendaftaran belum dibuka <ArrowRight size={18} /></button>
