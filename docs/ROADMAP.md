@@ -2,22 +2,18 @@
 
 | Tahap | Isi | Kriteria selesai |
 |---|---|---|
-| 1 · Website premium | Hero, text marquee, cursor custom, tilt card, horizontal scroll, gallery zoom, mobile layout | Dapat dibuka pada localhost dengan fallback demo |
-| 2 · Data GAS | Google Sheets milik customer, Apps Script public read-only, konten resmi, validasi | Update sheet muncul di website dalam ±5 menit |
-| 3 · Dashboard admin | Login aman, CMS profil/program/galeri, upload media, audit | Hanya admin berizin bisa mengubah konten |
-| 4 · Pendaftaran | Formulir peserta, anti-bot, privasi, notifikasi | Data masuk ke penyimpanan privat, tidak bocor ke publik |
-| 5 · Production | Monitoring, backup, SEO, a11y, kompresi media, testing, deploy domain | Layak serah terima perusahaan |
+| 1 · Website premium Sinergi Global | Hero, running text, custom cursor, kartu 3D, horizontal scroll, galeri interaktif dan responsif | Preview visual konsisten di desktop dan mobile |
+| 2 · Firebase CMS | Firebase project milik klien, Firestore site/program/gallery, server-side adapter, upload media | CMS membaca dan menyimpan data Firestore setelah browser QA |
+| 3 · Keamanan admin | Google nonce + Firebase Authentication, session cookie, allowlist admin, Upstash rate limits, headers/CSP | Hanya admin berizin dapat mengakses; semua negative tests lulus |
+| 4 · Rekrutmen | Vacancy management, formulir kandidat, CV privat, persetujuan/versi, status pipeline, audit dan retensi | Synthetic end-to-end tests lulus dan perusahaan menyetujui privasi |
+| 5 · Production | Monitoring, backup/restore, SEO, aksesibilitas, optimasi media, materi final, deploy domain dan handover | Persetujuan klien serta semua release gate tertutup |
 
-## Fitur visual lanjutan yang bisa diperhalus
-- Motion easing dan timeline matching setelah kita evaluasi rekaman video referensi pada desktop.
-- Penggantian hero photo menjadi video pendek/komposisi 3D jika tersedia aset resmi.
-- Pinning dan sideways scroll berbasis ScrollTrigger untuk bagian yang memerlukan pengalaman editorial lebih intens.
-- Custom photo lightbox (dengan navigasi keyboard) pada galeri.
+## Materi yang masih diperlukan dari Sinergi Global
 
-## Checklist yang dibutuhkan dari Synergy Indo Corpora
-1. Logo asli (SVG/PNG transparan), warna brand, dan izin pemakaian.
-2. Profil LPK final: sejarah, visi-misi, legalitas, alamat kantor.
-3. Program pelatihan yang benar-benar tersedia beserta materi/deskripsi singkat.
-4. 6–12 foto kegiatan asli, idealnya resolusi lebar minimal 1600px.
-5. Nomor WhatsApp dan email resmi.
-6. Domain/hosting produksi dan akun Google perusahaan.
+1. Logo resmi SVG/PNG dan persetujuan pemakaian identitas.
+2. Profil final, sejarah, legalitas, alamat kantor dan kontak resmi.
+3. Daftar lowongan aktif dengan persyaratan dan masa berlaku.
+4. Foto kegiatan asli yang disetujui untuk publikasi.
+5. Pemberitahuan privasi final, identitas pengendali data, kontak dan retensi.
+6. Firebase project/bucket/billing milik klien, daftar admin dan akses service account.
+7. Detail penyedia/spesifikasi/OS/akses VPS untuk evaluasi pendukung saja. VPS bukan sumber database/storage utama pada arsitektur ini.

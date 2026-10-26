@@ -1,0 +1,10 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    // CV uploads/downloads are proxied by authenticated Next.js server routes.
+    // Public image assets use explicit download tokens; candidate files never do.
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

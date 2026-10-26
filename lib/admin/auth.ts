@@ -104,3 +104,66 @@ export function sameOrigin(req: Request): boolean {
   try { return new URL(origin).host === new URL(req.url).host && new URL(origin).protocol === new URL(req.url).protocol; }
   catch { return false; }
 }
+
+
+/**
+ * Firebase's account lookup endpoint validates the Firebase ID token. This check
+ * additionally binds it to the configured project and to the already-verified,
+ * allowlisted Google email from the nonce-protected sign-in flow.
+ */
+export async function verifyFirebaseCredential(
+  idToken: string,
+  expectedEmail: string,
+): Promise<{ email: string; uid: string }> {
+  const projectId = process.env.FIREBASE_PROJECT_ID?.trim() || "";
+  const apiKey = process.env.FIREBASE_WEB_API_KEY?.trim() || "";
+  if (!projectId || !apiKey) throw new Error("Firebase Authentication belum dikonfigurasi.");
+  if (idToken.length > 16000) throw new Error("Token Firebase terlalu panjang.");
+  const pieces = idToken.split(".");
+  if (pieces.length !== 3) throw new Error("Format token Firebase tidak valid.");
+
+  let claims: Record<string, unknown>;
+  try {
+    claims = JSON.parse(Buffer.from(pieces[1], "base64url").toString("utf8")) as Record<string, unknown>;
+  } catch {
+    throw new Error("Klaim token Firebase tidak valid.");
+  }
+  const now = Math.floor(Date.now() / 1000);
+  if (claims.aud !== projectId ||
+      claims.iss !== "https://securetoken.google.com/" + projectId ||
+      typeof claims.sub !== "string" || !claims.sub ||
+      typeof claims.exp !== "number" || claims.exp <= now ||
+      typeof claims.iat !== "number" || claims.iat > now + 60 ||
+      typeof claims.email !== "string" || claims.email.toLowerCase() !== expectedEmail.toLowerCase()) {
+    throw new Error("Token Firebase tidak sesuai dengan project atau akun admin.");
+  }
+
+  const response = await fetch(
+    "https://identitytoolkit.googleapis.com/v1/accounts:lookup?key=" + encodeURIComponent(apiKey),
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ idToken }),
+      cache: "no-store",
+      signal: AbortSignal.timeout(8_000),
+    },
+  );
+  if (!response.ok) throw new Error("Firebase menolak kredensial admin.");
+  const result = await response.json() as {
+    users?: Array<{
+      localId?: string;
+      email?: string;
+      emailVerified?: boolean;
+      disabled?: boolean;
+      providerUserInfo?: Array<{ providerId?: string }>;
+    }>;
+  };
+  const user = result.users?.[0];
+  if (!user || !user.localId || user.localId !== claims.sub ||
+      typeof user.email !== "string" || user.email.toLowerCase() !== expectedEmail.toLowerCase() ||
+      user.emailVerified !== true || user.disabled === true ||
+      !user.providerUserInfo?.some(provider => provider.providerId === "google.com")) {
+    throw new Error("Akun Firebase tidak memenuhi kebijakan admin.");
+  }
+  return { email: user.email.toLowerCase(), uid: user.localId };
+}
