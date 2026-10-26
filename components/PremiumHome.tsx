@@ -215,7 +215,7 @@ export default function PremiumHome({ content, jobs, recruitmentReady, privacyNo
 
   return (
     <main ref={rootRef} id="top" className="sg-site">
-      <div className="preview-ribbon"><span className="preview-dot" /> {content.source === "demo" ? "MODE PRATINJAU · KONTEN CONTOH — BUKAN INFORMASI RESMI" : jobs.length > 0 ? (applicationEnabled ? "SISTEM REKRUTMEN · LOWONGAN AKTIF" : "LOWONGAN AKTIF · PENDAFTARAN BELUM DIBUKA") : "SISTEM REKRUTMEN · BELUM ADA LOWONGAN AKTIF"}</div>
+      <div className="preview-ribbon"><span className="preview-dot" /> {content.source === "demo" ? "MODE PRATINJAU · KONTEN CONTOH — BUKAN INFORMASI RESMI" : content.source === "gas" ? "MODE MEETING · CMS GOOGLE SHEETS · FORMULIR LAMARAN NONAKTIF" : jobs.length > 0 ? (applicationEnabled ? "SISTEM REKRUTMEN · LOWONGAN AKTIF" : "LOWONGAN AKTIF · PENDAFTARAN BELUM DIBUKA") : "SISTEM REKRUTMEN · BELUM ADA LOWONGAN AKTIF"}</div>
       <header className="site-header">
         <a className="sg-brand" href="#top" aria-label="Sinergi Global, kembali ke atas">
           <span className="sg-brand__mark">SG<span>.</span></span>
