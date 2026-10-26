@@ -20,19 +20,25 @@ function validate(body: unknown): string | null {
     if (!Object.keys(data).length || Object.keys(data).some(key => !allowedSiteKeys.has(key) || typeof data[key] !== "string" || (data[key] as string).length > 600)) return "Kolom profil tidak sah.";
     return null;
   }
-  if (body.action !== "upsert_program" && body.action !== "upsert_gallery") return "Aksi tidak diperbolehkan.";
+  if (body.action !== "upsert_program" && body.action !== "upsert_gallery" && body.action !== "upsert_job") return "Aksi tidak diperbolehkan.";
   if (typeof data.id !== "string" || !/^[a-zA-Z0-9-]{3,80}$/.test(data.id) ||
       typeof data.title !== "string" || !data.title.trim() || data.title.length > 160 ||
       typeof data.category !== "string" || data.category.length > 100 ||
       typeof data.published !== "boolean" ||
       !Number.isInteger(Number(data.order)) || Number(data.order) < 0 || Number(data.order) > 9999 ||
-      !validImage(data.image_url)) return "Data program atau galeri tidak valid.";
+      !validImage(data.image_url)) return "Data program, galeri, atau lowongan tidak valid.";
   if (data.published && !data.image_url) return "Unggah foto sebelum mempublikasikan konten.";
   const validDuration = typeof data.duration === "string"
     ? data.duration.length <= 100
     : typeof data.duration === "number" && Number.isFinite(data.duration) && String(data.duration).length <= 100;
   if (body.action === "upsert_program" && (typeof data.description !== "string" || data.description.length > 600 || !validDuration)) {
     return "Deskripsi program tidak valid.";
+  }
+  if (body.action === "upsert_job" &&
+      (typeof data.country !== "string" || !data.country.trim() || data.country.length > 100 ||
+       typeof data.category !== "string" || !data.category.trim() || data.category.length > 100 ||
+       typeof data.summary !== "string" || !data.summary.trim() || data.summary.length > 600)) {
+    return "Negara, bidang, atau ringkasan lowongan tidak valid.";
   }
   return null;
 }
@@ -83,7 +89,7 @@ export async function POST(request: NextRequest) {
     const validationError = validate(body);
     if (validationError) return NextResponse.json({ error: validationError }, { status: 400 });
     const payload = body as Record<string, unknown>;
-    if ((payload.action === "upsert_program" || payload.action === "upsert_gallery") && isPlain(payload.data)) {
+    if ((payload.action === "upsert_program" || payload.action === "upsert_gallery" || payload.action === "upsert_job") && isPlain(payload.data)) {
       const item = payload.data;
       payload.data = {
         ...item,

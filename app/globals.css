@@ -205,6 +205,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .countries-copy .display-title span { color: var(--sg-lime); }
 .countries-copy > p { max-width: 445px; margin: 24px 0 29px; color: #b7c7ce; font-size: 13px; line-height: 1.85; }
 .country-list { border-top: 1px solid #ffffff35; }
+.country-empty { margin: 0; padding: 26px 2px; border-bottom: 1px solid #ffffff35; color: #a4b7c1; font-size: 12px; line-height: 1.8; }
 .country-row { display: grid; grid-template-columns: 40px 42px minmax(0, 1fr) 22px; align-items: center; gap: 16px; width: 100%; padding: 22px 2px; border: 0; border-bottom: 1px solid #ffffff35; color: #fff; background: transparent; text-align: left; transition: padding .2s, background .2s; }
 .country-row:hover { padding-inline: 12px; background: #ffffff08; }
 .country-row__index { color: #8197a3; font-size: 10px; font-weight: 800; }
@@ -776,4 +777,227 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   .gallery-control,
   .gallery-card__image img,
   .gallery-card__arrow { transition: none !important; }
+}
+
+
+/* Decorative applicant walk cycle — lightweight SVG prototype, replaceable with a true 3D asset later. */
+.walking-applicant-stage {
+  position: relative;
+  height: clamp(124px, 13vw, 150px);
+  margin-top: 34px;
+  overflow: hidden;
+  border: 1px solid #dce6dc;
+  border-radius: 6px;
+  background:
+    radial-gradient(ellipse at 52% 120%, #cbd9ca 0%, #e6eee4 42%, transparent 76%),
+    linear-gradient(180deg, #f7f9f5 0%, #edf3eb 68%, #e2ebe1 100%);
+  isolation: isolate;
+}
+.walking-applicant-stage--video {
+  height: clamp(145px, 22vw, 220px);
+  margin: 14px 0 20px;
+  border-color: #e2e9e5;
+  background: linear-gradient(180deg, #fbfcfa 0%, #f1f5ef 100%);
+}
+.walking-applicant-video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  pointer-events: none;
+}
+.walking-applicant-stage--video.is-fallback .walking-applicant-video {
+  visibility: hidden;
+}
+.walking-applicant-stage--video.is-fallback .walking-applicant-track {
+  transform: none;
+  opacity: 1;
+  animation: none;
+  will-change: auto;
+}
+.walking-applicant-stage--video.is-fallback .walking-applicant {
+  left: 50%;
+  width: min(86px, 22vw);
+  transform: translateX(-50%);
+}
+.walking-applicant-stage--video.is-fallback .walking-applicant__figure,
+.walking-applicant-stage--video.is-fallback .walking-applicant__figure * {
+  animation: none !important;
+}
+.walking-applicant-stage__eyebrow {
+  position: absolute;
+  z-index: 1;
+  top: 14px;
+  left: 17px;
+  right: 17px;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  color: #59736a;
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: .15em;
+  pointer-events: none;
+}
+.walking-applicant-stage__pulse {
+  width: 6px;
+  height: 6px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  background: #9bc239;
+  box-shadow: 0 0 0 4px #9bc2391f;
+}
+.walking-applicant-stage__rule {
+  width: clamp(28px, 12vw, 150px);
+  height: 1px;
+  margin-left: 3px;
+  background: linear-gradient(90deg, #b8c9b8, transparent);
+}
+.walking-applicant-stage__path {
+  position: absolute;
+  right: 0;
+  bottom: 14px;
+  left: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, #b7c9b8 12%, #b7c9b8 88%, transparent);
+}
+.walking-applicant-track {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  transform: translate3d(-100%, 0, 0);
+  opacity: 0;
+  animation: applicant-crossing 22s linear infinite;
+  will-change: transform, opacity;
+}
+.walking-applicant {
+  position: absolute;
+  bottom: 5px;
+  left: 0;
+  width: clamp(70px, 7vw, 92px);
+  aspect-ratio: 160 / 220;
+}
+.walking-applicant__figure {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  transform-origin: center bottom;
+  animation: applicant-body-bob 22s linear infinite;
+}
+.walking-applicant.is-woman {
+  --applicant-jacket-light: #348b80;
+  --applicant-jacket-mid: #1d655e;
+  --applicant-jacket-dark: #10443f;
+  --applicant-shirt-light: #fff5df;
+  --applicant-shirt-dark: #d7e3dc;
+  --applicant-pants-light: #244b55;
+  --applicant-pants-dark: #102c39;
+}
+.walking-applicant__leg {
+  transform-box: fill-box;
+  transform-origin: 50% 0%;
+  animation: applicant-leg-walk 22s linear infinite;
+}
+.walking-applicant__leg--front {
+  animation-name: applicant-leg-walk-front;
+}
+.walking-applicant__arm--swing {
+  transform-box: fill-box;
+  transform-origin: 50% 10%;
+  animation: applicant-arm-swing 22s linear infinite;
+}
+.walking-applicant__arm--folder {
+  transform-box: fill-box;
+  transform-origin: 0% 0%;
+  animation: applicant-folder-sway 22s linear infinite;
+}
+.walking-applicant__portfolio {
+  transform-box: fill-box;
+  transform-origin: 50% 0%;
+  animation: applicant-portfolio-sway 22s linear infinite;
+}
+.walking-applicant__head {
+  transform-box: fill-box;
+  transform-origin: 52% 72%;
+  animation: applicant-head-look 22s linear infinite;
+}
+.walking-applicant__hair--back { opacity: .98; }
+
+@keyframes applicant-crossing {
+  0% { transform: translate3d(-100%, 0, 0); opacity: 0; }
+  3% { transform: translate3d(-100%, 0, 0); opacity: 0; }
+  6% { transform: translate3d(-95%, 0, 0); opacity: 1; }
+  18% { transform: translate3d(-84%, 0, 0); opacity: 1; }
+  20% { transform: translate3d(-82%, 0, 0); opacity: 1; }
+  29% { transform: translate3d(-82%, 0, 0); opacity: 1; }
+  45% { transform: translate3d(-58%, 0, 0); opacity: 1; }
+  48% { transform: translate3d(-56%, 0, 0); opacity: 1; }
+  56% { transform: translate3d(-56%, 0, 0); opacity: 1; }
+  91% { transform: translate3d(-18%, 0, 0); opacity: 1; }
+  97% { transform: translate3d(0, 0, 0); opacity: 0; }
+  100% { transform: translate3d(-100%, 0, 0); opacity: 0; }
+}
+@keyframes applicant-body-bob {
+  0%, 18%, 29%, 45%, 48%, 56%, 91%, 100% { transform: translateY(0); }
+  6%, 12%, 33%, 39%, 62%, 74%, 84% { transform: translateY(-2px); }
+  9%, 15%, 36%, 42%, 65%, 78%, 88% { transform: translateY(1px); }
+}
+@keyframes applicant-leg-walk {
+  0%, 100% { transform: rotate(-16deg); }
+  3%, 9%, 15%, 31%, 37%, 43%, 59%, 65%, 71%, 77%, 83%, 89% { transform: rotate(-16deg); }
+  6%, 12%, 18%, 30%, 34%, 40%, 46%, 58%, 64%, 70%, 76%, 82%, 88%, 94% { transform: rotate(16deg); }
+  20%, 22%, 24%, 26%, 28%, 48%, 50%, 52%, 54%, 56% { transform: rotate(0deg); }
+}
+@keyframes applicant-leg-walk-front {
+  0%, 100% { transform: rotate(16deg); }
+  3%, 9%, 15%, 31%, 37%, 43%, 59%, 65%, 71%, 77%, 83%, 89% { transform: rotate(16deg); }
+  6%, 12%, 18%, 30%, 34%, 40%, 46%, 58%, 64%, 70%, 76%, 82%, 88%, 94% { transform: rotate(-16deg); }
+  20%, 22%, 24%, 26%, 28%, 48%, 50%, 52%, 54%, 56% { transform: rotate(0deg); }
+}
+@keyframes applicant-arm-swing {
+  0%, 100% { transform: rotate(7deg); }
+  6%, 18%, 31%, 43%, 59%, 71%, 83%, 91% { transform: rotate(-8deg); }
+  12%, 24%, 37%, 49%, 65%, 77%, 89% { transform: rotate(8deg); }
+  20%, 22%, 26%, 28%, 48%, 50%, 54%, 56% { transform: rotate(0deg); }
+}
+@keyframes applicant-folder-sway {
+  0%, 100% { transform: rotate(0deg); }
+  12%, 39%, 66%, 88% { transform: rotate(-3deg); }
+  18%, 43%, 72% { transform: rotate(2deg); }
+  20%, 22%, 24%, 26%, 28%, 48%, 50%, 52%, 54%, 56% { transform: rotate(0deg); }
+}
+@keyframes applicant-portfolio-sway {
+  0%, 100% { transform: rotate(0deg); }
+  12%, 39%, 66%, 88% { transform: rotate(2deg); }
+  18%, 43%, 72% { transform: rotate(-2deg); }
+  20%, 22%, 24%, 26%, 28%, 48%, 50%, 52%, 54%, 56% { transform: rotate(0deg); }
+}
+@keyframes applicant-head-look {
+  0%, 18%, 29%, 45%, 56%, 91%, 100% { transform: rotate(0deg) scaleX(1); }
+  20% { transform: rotate(-7deg) scaleX(.88); }
+  22% { transform: rotate(3deg) scaleX(-.92); }
+  24% { transform: rotate(-4deg) scaleX(1); }
+  26% { transform: rotate(2deg) scaleX(-.95); }
+  28% { transform: rotate(0deg) scaleX(1); }
+  48% { transform: rotate(5deg) scaleX(.9); }
+  50% { transform: rotate(-3deg) scaleX(-.9); }
+  52% { transform: rotate(3deg) scaleX(1); }
+  54% { transform: rotate(0deg) scaleX(-.95); }
+}
+
+@media (max-width: 560px) {
+  .walking-applicant-stage { margin-top: 25px; }
+  .walking-applicant-stage--video { height: clamp(138px, 42vw, 182px); margin: 12px 0 18px; }
+  .walking-applicant-stage__eyebrow { top: 11px; left: 12px; right: 12px; font-size: 7px; letter-spacing: .1em; }
+  .walking-applicant-stage__rule { width: clamp(20px, 9vw, 52px); }
+  .walking-applicant { bottom: 4px; }
+  .walking-applicant-stage__path { bottom: 10px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .walking-applicant-stage--video .walking-applicant-video { display: none; }
+  .walking-applicant-stage--video .walking-applicant-track,
+  .walking-applicant-stage--video .walking-applicant__figure,
+  .walking-applicant-stage--video .walking-applicant__figure * { animation: none !important; }
 }
