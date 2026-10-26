@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getAdminSession, sameOrigin } from "@/lib/admin/auth";
 import { checkRateLimit, rateLimitResponse } from "@/lib/admin/rate-limit";
 import { createRecruitmentJob, isRecruitmentBackendConfigured, listAdminJobs } from "@/lib/recruitment/store";
+import { readRequestBodyLimited, RequestBodyTooLargeError } from "@/lib/http/read-request-body-limited";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -52,9 +53,8 @@ export async function POST(request: NextRequest) {
   const blocked = rateLimitResponse(await checkRateLimit(request, "candidate-admin-write", 30, 60, session.email));
   if (blocked) return blocked;
   try {
-    const raw = await request.text();
-    if (raw.length > 12000) return NextResponse.json({ error: "Permintaan terlalu besar." }, { status: 413 });
-    const input = jobInput(JSON.parse(raw));
+    const raw = await readRequestBodyLimited(request, 12000);
+    const input = jobInput(JSON.parse(raw.toString("utf8")));
     if (!input) return NextResponse.json({ error: "Lengkapi data lowongan. Posisi publik wajib memiliki deskripsi dan persyaratan." }, { status: 400 });
     const now = new Date().toISOString();
     const job = await createRecruitmentJob({
@@ -62,7 +62,13 @@ export async function POST(request: NextRequest) {
       image_url: null, created_by: session.email, updated_by: session.email, created_at: now, updated_at: now,
     });
     return NextResponse.json({ ok: true, job }, { status: 201, headers: { "Cache-Control": "no-store" } });
-  } catch {
+  } catch (error) {
+    if (error instanceof RequestBodyTooLargeError) {
+      return NextResponse.json({ error: "Permintaan terlalu besar." }, { status: 413, headers: { "Cache-Control": "no-store" } });
+    }
+    if (error instanceof SyntaxError) {
+      return NextResponse.json({ error: "Format permintaan tidak valid." }, { status: 400, headers: { "Cache-Control": "no-store" } });
+    }
     return NextResponse.json({ error: "Lowongan belum dapat disimpan." }, { status: 503, headers: { "Cache-Control": "no-store" } });
   }
 }
