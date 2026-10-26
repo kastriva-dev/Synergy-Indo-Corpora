@@ -101,6 +101,7 @@ export default function PremiumHome({ content, jobs, recruitmentReady, privacyNo
     () => Array.from(new Set(jobs.map((job) => job.category.trim()).filter(Boolean))).sort((a, b) => a.localeCompare(b)),
     [jobs],
   );
+  const applicationEnabled = recruitmentReady && jobs.length > 0;
 
   const wa = content.site.contact_whatsapp.replace(/\D/g, "");
   const whatsAppUrl = /^62\d{8,13}$/.test(wa) ? "https://wa.me/" + wa : "";
@@ -150,7 +151,7 @@ export default function PremiumHome({ content, jobs, recruitmentReady, privacyNo
   async function submitInterest(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setFormMessage("");
-    if (!recruitmentReady || jobs.length === 0) {
+    if (!applicationEnabled) {
       setFormMessage("Pendaftaran belum aktif. Silakan kembali setelah lowongan dan sistem lamaran resmi tersedia.");
       return;
     }
@@ -214,7 +215,7 @@ export default function PremiumHome({ content, jobs, recruitmentReady, privacyNo
 
   return (
     <main ref={rootRef} id="top" className="sg-site">
-      <div className="preview-ribbon"><span className="preview-dot" /> {jobs.length > 0 ? "SISTEM REKRUTMEN · LOWONGAN DARI PANEL ADMIN" : "SISTEM REKRUTMEN · BELUM ADA LOWONGAN AKTIF"}</div>
+      <div className="preview-ribbon"><span className="preview-dot" /> {content.source === "demo" ? "MODE PRATINJAU · KONTEN CONTOH — BUKAN INFORMASI RESMI" : jobs.length > 0 ? (applicationEnabled ? "SISTEM REKRUTMEN · LOWONGAN AKTIF" : "LOWONGAN AKTIF · PENDAFTARAN BELUM DIBUKA") : "SISTEM REKRUTMEN · BELUM ADA LOWONGAN AKTIF"}</div>
       <header className="site-header">
         <a className="sg-brand" href="#top" aria-label="Sinergi Global, kembali ke atas">
           <span className="sg-brand__mark">SG<span>.</span></span>
@@ -228,7 +229,7 @@ export default function PremiumHome({ content, jobs, recruitmentReady, privacyNo
           <a onClick={() => setMenuOpen(false)} href="#galeri">Galeri</a>
           <a onClick={() => setMenuOpen(false)} href="#berita">Berita</a>
         </nav>
-        <a className="header-cta" href="#daftar">Mulai pendaftaran <ArrowUpRight size={16} /></a>
+        <a className="header-cta" href="#daftar">{applicationEnabled ? "Mulai pendaftaran" : "Informasi pendaftaran"} <ArrowUpRight size={16} /></a>
         <button type="button" className="menu-toggle" aria-label={menuOpen ? "Tutup menu" : "Buka menu"} aria-expanded={menuOpen} onClick={() => setMenuOpen((value) => !value)}>
           {menuOpen ? <X size={23} /> : <Menu size={23} />}
         </button>
@@ -471,28 +472,28 @@ export default function PremiumHome({ content, jobs, recruitmentReady, privacyNo
           <div className="registration-copy">
             <div className="section-kicker section-kicker--light reveal"><span>09</span><span className="section-kicker__line" /> FORM MINAT KANDIDAT</div>
             <h2 className="display-title reveal">MULAI DARI<br /><span>LANGKAH PERTAMA.</span></h2>
-            <p className="reveal">Pilih lowongan aktif, lengkapi informasi dasar, dan unggah CV PDF. Data hanya dikirim bila backend rekrutmen serta pemberitahuan privasi resmi sudah diaktifkan.</p>
-            <div className="registration-points reveal"><span><CheckCircle2 size={17} /> Informasi kandidat</span><span><CheckCircle2 size={17} /> Lowongan aktif</span><span><CheckCircle2 size={17} /> CV PDF tersimpan privat</span></div>
+            <p className="reveal">{applicationEnabled ? "Pilih lowongan aktif, lengkapi informasi dasar, dan unggah CV PDF. Data hanya dikirim melalui sistem yang telah diverifikasi." : "Pendaftaran kandidat belum dibuka. Informasi lowongan resmi akan ditampilkan setelah diverifikasi; formulir dan unggah CV baru diaktifkan setelah backend serta pemberitahuan privasi disetujui."}</p>
+            <div className="registration-points reveal"><span><CheckCircle2 size={17} /> Informasi kandidat</span><span><CheckCircle2 size={17} /> Lowongan aktif</span><span><CheckCircle2 size={17} /> {applicationEnabled ? "CV PDF tersimpan privat" : "CV belum diterima"}</span></div>
             <div className="registration-security reveal"><ShieldCheck size={20} /><span>Data pribadi dan CV hanya diproses dengan persetujuan yang tercatat serta pemberitahuan privasi yang telah disetujui.</span></div>
           </div>
           <form className="registration-form reveal" onSubmit={submitInterest}>
             {!recruitmentReady && <p className="form-message" role="status">Pendaftaran sementara ditutup sampai backend, kebijakan privasi, dan penyimpanan aman terverifikasi.</p>}
             <div className="registration-form__head"><span>FORMULIR AWAL</span><span>FORMULIR LAMARAN</span></div>
-            <div className="form-field"><label htmlFor="candidate-name">Nama lengkap</label><input id="candidate-name" name="name" autoComplete="name" required placeholder="Masukkan nama lengkap" /></div>
+            <div className="form-field"><label htmlFor="candidate-name">Nama lengkap</label><input id="candidate-name" name="name" autoComplete="name" required disabled={!applicationEnabled || isSubmitting} placeholder="Masukkan nama lengkap" /></div>
             <div className="form-row">
-              <div className="form-field"><label htmlFor="candidate-phone">Nomor WhatsApp</label><input id="candidate-phone" name="phone" type="tel" autoComplete="tel" required placeholder="08xx xxxx xxxx" /></div>
-              <div className="form-field"><label htmlFor="candidate-email">Email</label><input id="candidate-email" name="email" type="email" autoComplete="email" placeholder="nama@email.com" /></div>
+              <div className="form-field"><label htmlFor="candidate-phone">Nomor WhatsApp</label><input id="candidate-phone" name="phone" type="tel" autoComplete="tel" required disabled={!applicationEnabled || isSubmitting} placeholder="08xx xxxx xxxx" /></div>
+              <div className="form-field"><label htmlFor="candidate-email">Email</label><input id="candidate-email" name="email" type="email" autoComplete="email" disabled={!applicationEnabled || isSubmitting} placeholder="nama@email.com" /></div>
             </div>
             <div className="form-row">
-              <div className="form-field"><label htmlFor="candidate-country">Negara tujuan</label><select id="candidate-country" name="country" value={targetCountry} onChange={(event) => { const job = jobs.find((item) => item.id === selectedPosition); if (job) { setTargetCountry(job.country); return; } setTargetCountry(event.target.value); }} disabled={!recruitmentReady || isSubmitting} required><option value="">Pilih negara tujuan</option>{countries.map((country) => <option key={country.name} value={country.name}>{country.flag} {country.name}</option>)}</select></div>
-              <div className="form-field"><label htmlFor="candidate-position">Bidang / posisi</label><select id="candidate-position" name="position" value={selectedPosition} onChange={(event) => { setSelectedPosition(event.target.value); const job = jobs.find((item) => item.id === event.target.value); if (job) setTargetCountry(job.country); }} required><option value="">Pilih lowongan aktif</option>{jobs.map((job) => <option key={job.id} value={job.id}>{job.title} — {job.country}</option>)}</select></div>
+              <div className="form-field"><label htmlFor="candidate-country">Negara tujuan</label><select id="candidate-country" name="country" value={targetCountry} onChange={(event) => { const job = jobs.find((item) => item.id === selectedPosition); if (job) { setTargetCountry(job.country); return; } setTargetCountry(event.target.value); }} disabled={!applicationEnabled || isSubmitting} required><option value="">Pilih negara tujuan</option>{countries.map((country) => <option key={country.name} value={country.name}>{country.flag} {country.name}</option>)}</select></div>
+              <div className="form-field"><label htmlFor="candidate-position">Bidang / posisi</label><select id="candidate-position" name="position" value={selectedPosition} onChange={(event) => { setSelectedPosition(event.target.value); const job = jobs.find((item) => item.id === event.target.value); if (job) setTargetCountry(job.country); }} disabled={!applicationEnabled || isSubmitting} required><option value="">Pilih lowongan aktif</option>{jobs.map((job) => <option key={job.id} value={job.id}>{job.title} — {job.country}</option>)}</select></div>
             </div>
-            <div className="form-field"><label htmlFor="candidate-cv">Unggah CV <span>PDF · Maks. 3 MiB</span></label><label className="file-drop" htmlFor="candidate-cv"><UploadCloud size={23} /><strong>{cvName || "Pilih CV PDF Anda"}</strong><small>{cvName ? "File siap untuk diunggah" : "PDF saja · maksimal 3 MiB"}</small><input id="candidate-cv" name="cv" type="file" accept="application/pdf,.pdf" required disabled={!recruitmentReady || isSubmitting} onChange={async (event) => { const input = event.currentTarget; const file = input.files?.[0]; if (!file) { setCvName(""); setCvFile(null); return; } if (file.size > 3 * 1024 * 1024 || file.type !== "application/pdf" || !file.name.toLowerCase().endsWith(".pdf")) { setFormMessage("CV harus berupa PDF dengan ukuran maksimal 3 MiB."); input.value = ""; setCvName(""); setCvFile(null); return; } const header = new Uint8Array(await file.slice(0, 5).arrayBuffer()); if (String.fromCharCode(...header) !== "%PDF-") { setFormMessage("Isi file bukan PDF yang valid."); input.value = ""; setCvName(""); setCvFile(null); return; } setCvFile(file); setCvName(file.name); setFormMessage(""); }} /></label></div>
+            <div className="form-field"><label htmlFor="candidate-cv">Unggah CV <span>PDF · Maks. 3 MiB</span></label><label className="file-drop" htmlFor="candidate-cv"><UploadCloud size={23} /><strong>{cvName || "Pilih CV PDF Anda"}</strong><small>{cvName ? "File siap untuk diunggah" : "PDF saja · maksimal 3 MiB"}</small><input id="candidate-cv" name="cv" type="file" accept="application/pdf,.pdf" required disabled={!applicationEnabled || isSubmitting} onChange={async (event) => { const input = event.currentTarget; const file = input.files?.[0]; if (!file) { setCvName(""); setCvFile(null); return; } if (file.size > 3 * 1024 * 1024 || file.type !== "application/pdf" || !file.name.toLowerCase().endsWith(".pdf")) { setFormMessage("CV harus berupa PDF dengan ukuran maksimal 3 MiB."); input.value = ""; setCvName(""); setCvFile(null); return; } const header = new Uint8Array(await file.slice(0, 5).arrayBuffer()); if (String.fromCharCode(...header) !== "%PDF-") { setFormMessage("Isi file bukan PDF yang valid."); input.value = ""; setCvName(""); setCvFile(null); return; } setCvFile(file); setCvName(file.name); setFormMessage(""); }} /></label></div>
             <div className="sr-only" aria-hidden="true"><label htmlFor="candidate-website">Biarkan kolom ini kosong</label><input id="candidate-website" name="website" autoComplete="off" tabIndex={-1} /></div>
-            <label className="consent-check"><input type="checkbox" name="consent" required disabled={!recruitmentReady || isSubmitting} /><span>Saya telah membaca <a href="/privasi" target="_blank" rel="noreferrer">Pemberitahuan Privasi Kandidat</a> dan menyetujui pemrosesan data untuk proses rekrutmen.</span></label>
-            <button className="button button--lime registration-submit" type="submit" disabled={isSubmitting || !recruitmentReady || jobs.length === 0}>{isSubmitting ? "MENGIRIM..." : "KIRIM LAMARAN"} <ArrowRight size={18} /></button>
+            <label className="consent-check"><input type="checkbox" name="consent" required disabled={!applicationEnabled || isSubmitting} /><span>Saya telah membaca <a href="/privasi" target="_blank" rel="noreferrer">Pemberitahuan Privasi Kandidat</a> dan menyetujui pemrosesan data untuk proses rekrutmen.</span></label>
+            <button className="button button--lime registration-submit" type="submit" disabled={isSubmitting || !applicationEnabled}>{isSubmitting ? "MENGIRIM..." : "KIRIM LAMARAN"} <ArrowRight size={18} /></button>
             {formMessage && <p className="form-message" role="status">{formMessage}</p>}
-            <p className="form-footnote"><ShieldCheck size={14} /> CV disimpan pada penyimpanan privat. Unduhan hanya tersedia bagi admin yang berwenang.</p>
+            <p className="form-footnote"><ShieldCheck size={14} /> {applicationEnabled ? "CV disimpan pada penyimpanan privat. Unduhan hanya tersedia bagi admin yang berwenang." : "Tidak ada CV yang dikirim atau disimpan saat formulir belum aktif."}</p>
           </form>
         </div>
       </section>
