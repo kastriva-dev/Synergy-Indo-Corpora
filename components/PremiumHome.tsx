@@ -183,12 +183,12 @@ export default function PremiumHome({ content }: { content: PublicContent }) {
 
   function submitInterest(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setFormMessage("Ini masih pratinjau desain. Data dan CV belum dikirim atau disimpan. Integrasi backend pendaftaran perlu diselesaikan sebelum formulir digunakan oleh publik.");
+    setFormMessage("Pendaftaran kandidat belum dibuka. Data dan CV tidak dikirim atau disimpan.");
   }
 
   return (
     <main ref={rootRef} id="top" className="sg-site">
-      <div className="preview-ribbon"><span className="preview-dot" /> PRATINJAU DESAIN · DATA POSISI MASIH CONTOH</div>
+      <div className="preview-ribbon"><span className="preview-dot" /> {content.source === "gas" ? "CMS GOOGLE SHEETS · PENDAFTARAN DAN UNGGAH CV NONAKTIF" : "PRATINJAU DESAIN · DATA POSISI MASIH CONTOH"}</div>
       <header className="site-header">
         <a className="sg-brand" href="#top" aria-label="Sinergi Global, kembali ke atas">
           <span className="sg-brand__mark">SG<span>.</span></span>
@@ -201,7 +201,7 @@ export default function PremiumHome({ content }: { content: PublicContent }) {
           <a onClick={() => setMenuOpen(false)} href="#proses">Alur proses</a>
           <a onClick={() => setMenuOpen(false)} href="#berita">Berita</a>
         </nav>
-        <a className="header-cta" href="#daftar">Mulai pendaftaran <ArrowUpRight size={16} /></a>
+        <a className="header-cta" href="#daftar">Informasi pendaftaran <ArrowUpRight size={16} /></a>
         <button type="button" className="menu-toggle" aria-label={menuOpen ? "Tutup menu" : "Buka menu"} aria-expanded={menuOpen} onClick={() => setMenuOpen((value) => !value)}>
           {menuOpen ? <X size={23} /> : <Menu size={23} />}
         </button>
@@ -420,24 +420,24 @@ export default function PremiumHome({ content }: { content: PublicContent }) {
           <div className="registration-copy">
             <div className="section-kicker section-kicker--light reveal"><span>08</span><span className="section-kicker__line" /> FORM MINAT KANDIDAT</div>
             <h2 className="display-title reveal">MULAI DARI<br /><span>LANGKAH PERTAMA.</span></h2>
-            <p className="reveal">Isi informasi awal agar tim dapat memahami minat bidang dan negara tujuan Anda. Formulir ini masih berupa pratinjau dan belum menyimpan atau mengirim data.</p>
-            <div className="registration-points reveal"><span><CheckCircle2 size={17} /> Informasi dasar kandidat</span><span><CheckCircle2 size={17} /> Bidang dan negara tujuan</span><span><CheckCircle2 size={17} /> Slot unggah CV</span></div>
+            <p className="reveal">Pendaftaran kandidat belum dibuka. Formulir dan unggah CV dinonaktifkan sampai backend, konten resmi, dan pemberitahuan privasi disetujui. Tidak ada data yang dikirim atau disimpan.</p>
+            <div className="registration-points reveal"><span><CheckCircle2 size={17} /> Informasi kandidat</span><span><CheckCircle2 size={17} /> Bidang dan negara tujuan</span><span><CheckCircle2 size={17} /> CV belum diterima</span></div>
             <div className="registration-security reveal"><ShieldCheck size={20} /><span>Data pribadi dan CV harus diproses dengan izin, penyimpanan aman, serta pemberitahuan privasi yang jelas sebelum formulir diaktifkan.</span></div>
           </div>
           <form className="registration-form reveal" onSubmit={submitInterest}>
-            <div className="registration-form__head"><span>FORMULIR AWAL</span><span>PRATINJAU / 01</span></div>
-            <div className="form-field"><label htmlFor="candidate-name">Nama lengkap</label><input id="candidate-name" name="name" autoComplete="name" required placeholder="Masukkan nama lengkap" /></div>
+            <div className="registration-form__head"><span>PENDAFTARAN BELUM DIBUKA</span><span>INFORMASI / 01</span></div>
+            <div className="form-field"><label htmlFor="candidate-name">Nama lengkap</label><input id="candidate-name" name="name" autoComplete="name" required disabled placeholder="Pendaftaran belum dibuka" /></div>
             <div className="form-row">
-              <div className="form-field"><label htmlFor="candidate-phone">Nomor WhatsApp</label><input id="candidate-phone" name="phone" type="tel" autoComplete="tel" required placeholder="08xx xxxx xxxx" /></div>
-              <div className="form-field"><label htmlFor="candidate-email">Email</label><input id="candidate-email" name="email" type="email" autoComplete="email" placeholder="nama@email.com" /></div>
+              <div className="form-field"><label htmlFor="candidate-phone">Nomor WhatsApp</label><input id="candidate-phone" name="phone" type="tel" autoComplete="tel" required disabled placeholder="Pendaftaran belum dibuka" /></div>
+              <div className="form-field"><label htmlFor="candidate-email">Email</label><input id="candidate-email" name="email" type="email" autoComplete="email" disabled placeholder="Pendaftaran belum dibuka" /></div>
             </div>
             <div className="form-row">
-              <div className="form-field"><label htmlFor="candidate-country">Negara tujuan</label><select id="candidate-country" name="country" value={targetCountry} onChange={(event) => setTargetCountry(event.target.value)} required>{countries.map((country) => <option key={country.name} value={country.name}>{country.flag} {country.name}</option>)}</select></div>
-              <div className="form-field"><label htmlFor="candidate-position">Bidang / posisi</label><select id="candidate-position" name="position" value={selectedPosition} onChange={(event) => setSelectedPosition(event.target.value)} required><option value="">Pilih contoh posisi</option>{jobSamples.map((job) => <option key={job.id} value={job.title}>{job.title}</option>)}</select></div>
+              <div className="form-field"><label htmlFor="candidate-country">Negara tujuan</label><select id="candidate-country" name="country" value={targetCountry} onChange={(event) => setTargetCountry(event.target.value)} required disabled>{countries.map((country) => <option key={country.name} value={country.name}>{country.flag} {country.name}</option>)}</select></div>
+              <div className="form-field"><label htmlFor="candidate-position">Bidang / posisi</label><select id="candidate-position" name="position" value={selectedPosition} onChange={(event) => setSelectedPosition(event.target.value)} required disabled><option value="">Pilih contoh posisi</option>{jobSamples.map((job) => <option key={job.id} value={job.title}>{job.title}</option>)}</select></div>
             </div>
-            <div className="form-field"><label htmlFor="candidate-cv">Unggah CV <span>PDF / DOC / DOCX · Maks. 5 MB</span></label><label className="file-drop" htmlFor="candidate-cv"><UploadCloud size={23} /><strong>{cvName || "Pilih file CV Anda"}</strong><small>{cvName ? "File dipilih untuk pratinjau" : "Klik untuk memilih file dari perangkat"}</small><input id="candidate-cv" name="cv" type="file" accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document" required onChange={(event) => { const file = event.currentTarget.files?.[0]; if (!file) { setCvName(""); return; } if (file.size > 5 * 1024 * 1024) { setFormMessage("Ukuran file melebihi 5 MB. Pilih CV yang lebih kecil."); event.currentTarget.value = ""; setCvName(""); return; } setCvName(file.name); setFormMessage(""); }} /></label></div>
-            <label className="consent-check"><input type="checkbox" required /><span>Saya memahami bahwa ini formulir pratinjau dan data belum dikirim.</span></label>
-            <button className="button button--lime registration-submit" type="submit">Tinjau pendaftaran <ArrowRight size={18} /></button>
+            <div className="form-field"><label htmlFor="candidate-cv">Unggah CV <span>PDF / DOC / DOCX · Maks. 5 MB</span></label><label className="file-drop" htmlFor="candidate-cv"><UploadCloud size={23} /><strong>{cvName || "Pilih file CV Anda"}</strong><small>Unggah CV belum tersedia</small><input id="candidate-cv" name="cv" type="file" disabled accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document" required onChange={(event) => { const file = event.currentTarget.files?.[0]; if (!file) { setCvName(""); return; } if (file.size > 5 * 1024 * 1024) { setFormMessage("Ukuran file melebihi 5 MB. Pilih CV yang lebih kecil."); event.currentTarget.value = ""; setCvName(""); return; } setCvName(file.name); setFormMessage(""); }} /></label></div>
+            <label className="consent-check"><input type="checkbox" required disabled /><span>Pemberitahuan privasi resmi belum disetujui; formulir belum dapat digunakan.</span></label>
+            <button className="button button--lime registration-submit" type="submit" disabled>Pendaftaran belum dibuka <ArrowRight size={18} /></button>
             {formMessage && <p className="form-message" role="status">{formMessage}</p>}
             <p className="form-footnote"><ShieldCheck size={14} /> Jangan unggah CV asli sebelum sistem penyimpanan dan kebijakan privasi resmi tersedia.</p>
           </form>
