@@ -127,6 +127,7 @@ const processSteps = [
 export default function PremiumHome({ content }: { content: PublicContent }) {
   const rootRef = useRef<HTMLElement>(null);
   const galleryTrackRef = useRef<HTMLDivElement>(null);
+  const sectorTickerRef = useRef<HTMLDivElement>(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [countryFilter, setCountryFilter] = useState("Semua negara");
@@ -154,6 +155,39 @@ export default function PremiumHome({ content }: { content: PublicContent }) {
       return matchesQuery && matchesCountry && matchesCategory;
     });
   }, [searchTerm, countryFilter, categoryFilter]);
+
+  useEffect(() => {
+    const ticker = sectorTickerRef.current;
+    if (!ticker) return;
+    const finePointer = window.matchMedia("(hover: hover) and (pointer: fine)");
+    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+    if (!finePointer.matches || reducedMotion.matches) return;
+
+    let frame = 0;
+    const updateProximity = (event: PointerEvent) => {
+      if (event.pointerType === "touch") return;
+      if (frame) window.cancelAnimationFrame(frame);
+      frame = window.requestAnimationFrame(() => {
+        const rect = ticker.getBoundingClientRect();
+        const nearestX = Math.max(rect.left, Math.min(event.clientX, rect.right));
+        const nearestY = Math.max(rect.top, Math.min(event.clientY, rect.bottom));
+        const distance = Math.hypot(event.clientX - nearestX, event.clientY - nearestY);
+        ticker.toggleAttribute("data-pointer-near", distance <= 96);
+      });
+    };
+    const resetProximity = () => ticker.removeAttribute("data-pointer-near");
+
+    document.addEventListener("pointermove", updateProximity, { passive: true });
+    document.documentElement.addEventListener("pointerleave", resetProximity);
+    window.addEventListener("blur", resetProximity);
+    return () => {
+      document.removeEventListener("pointermove", updateProximity);
+      document.documentElement.removeEventListener("pointerleave", resetProximity);
+      window.removeEventListener("blur", resetProximity);
+      if (frame) window.cancelAnimationFrame(frame);
+      resetProximity();
+    };
+  }, []);
 
   useEffect(() => {
     const root = rootRef.current;
@@ -321,11 +355,11 @@ export default function PremiumHome({ content }: { content: PublicContent }) {
         </div>
       </section>
 
-      <div className="sector-ticker" aria-label="Bidang pekerjaan">
+      <div className="sector-ticker" ref={sectorTickerRef} role="region" aria-label="Bidang pekerjaan">
         <div className="sector-ticker__label"><span className="ticker-dot" /> BIDANG KERJA</div>
-        <div className="sector-ticker__viewport"><div className="sector-ticker__track">
+        <div className="sector-ticker__viewport" tabIndex={0} aria-label="Daftar bidang pekerjaan; dapat digulir dengan keyboard"><div className="sector-ticker__track">
           {Array.from({ length: 2 }).map((_, index) => (
-            <span className="sector-ticker__set" key={index}>HOSPITALITY <b>✳</b> MANUFACTURING <b>✳</b> ELECTRICAL <b>✳</b> WAREHOUSE <b>✳</b> CONSTRUCTION <b>✳</b> WELDING <b>✳</b></span>
+            <span className="sector-ticker__set" key={index} aria-hidden={index === 1}>HOSPITALITY <b>✳</b> MANUFACTURING <b>✳</b> ELECTRICAL <b>✳</b> WAREHOUSE <b>✳</b> CONSTRUCTION <b>✳</b> WELDING <b>✳</b></span>
           ))}
         </div></div>
         <span className="sector-ticker__hint">EXPLORE YOUR SKILLS</span>
@@ -582,7 +616,7 @@ export default function PremiumHome({ content }: { content: PublicContent }) {
           <div className="footer-main">
             <a className="sg-brand sg-brand--footer" href="#top"><span className="sg-brand__mark">SG<span>.</span></span><span className="sg-brand__name">SINERGI GLOBAL<small>CAREER OPPORTUNITIES</small></span></a>
             <p>Menghubungkan keterampilan, persiapan, dan informasi peluang karier internasional dengan lebih terarah.</p>
-            <div className="footer-links"><span>JELAJAHI</span><a href="#bidang">Bidang kerja</a><a href="#peluang">Contoh posisi</a><a href="#proses">Alur proses</a><a href="#berita">Berita & panduan</a></div>
+            <div className="footer-links"><span>JELAJAHI</span><a href="#bidang">Bidang kerja</a><a href="#peluang">Contoh posisi</a><a href="#proses">Alur proses</a><a href="#galeri">Galeri aktivitas</a><a href="#berita">Berita & panduan</a></div>
             <div className="footer-social"><span>MEDIA SOSIAL</span><div><span aria-label="Instagram, tautan resmi menyusul"><Instagram size={18} /></span><span aria-label="LinkedIn, tautan resmi menyusul"><Linkedin size={18} /></span><span aria-label="Informasi grup perusahaan"><Building2 size={18} /></span></div><small>Tautan resmi menyusul</small></div>
           </div>
           <div className="footer-group-note">PT SINERGI CORPORA GROUP · JAVA INDO CORPORA <span>Logo dan hubungan grup perlu disesuaikan dengan aset resmi.</span></div>
