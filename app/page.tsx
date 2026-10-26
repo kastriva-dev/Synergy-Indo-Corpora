@@ -9,8 +9,9 @@ export default async function Page() {
   let jobs: RecruitmentJob[] = [];
   let recruitmentReady = false;
   try {
-    recruitmentReady = content.source !== "demo" && await checkRecruitmentServiceReady();
-    if (content.source !== "demo") jobs = await getPublishedJobs();
+    // Candidate intake remains Firebase-only; GAS is strictly read-only CMS for the meeting.
+    recruitmentReady = content.source === "firebase" && await checkRecruitmentServiceReady();
+    if (content.source === "firebase") jobs = await getPublishedJobs();
   } catch {
     jobs = [];
     recruitmentReady = false;
