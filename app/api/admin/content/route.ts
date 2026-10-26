@@ -2,6 +2,10 @@ import { isApprovedMediaUrl } from "@/lib/media-url";
 import { NextRequest, NextResponse } from "next/server";
 import { getAdminSession, sameOrigin } from "@/lib/admin/auth";
 import { checkRateLimit, rateLimitResponse } from "@/lib/admin/rate-limit";
+import { isFirebaseConfigured } from "@/lib/firebase/server";
+import { readCmsSnapshot, saveCmsItem, saveCmsSite } from "@/lib/firebase/cms";
+import { fallbackContent } from "@/lib/content";
+import { readRequestBodyLimited, RequestBodyTooLargeError } from "@/lib/http/read-request-body-limited";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -37,34 +41,20 @@ function validate(body: unknown): string | null {
   return null;
 }
 
-async function callAdminGas(payload: Record<string, unknown>) {
-  const url = process.env.GAS_ADMIN_WEB_APP_URL?.trim();
-  const secret = process.env.GAS_ADMIN_SECRET?.trim();
-  if (!url || !secret || secret.length < 32) throw new Error("Backend admin GAS belum dikonfigurasi.");
-  const parsedUrl = new URL(url);
-  if (parsedUrl.protocol !== "https:" || parsedUrl.hostname !== "script.google.com" || !parsedUrl.pathname.endsWith("/exec")) throw new Error("URL admin GAS tidak valid.");
-  const upstream = await fetch(parsedUrl.toString(), {
-    method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" },
-    body: JSON.stringify({ ...payload, secret }), signal: AbortSignal.timeout(15000), cache: "no-store",
-  });
-  if (!upstream.ok) throw new Error("GAS sedang tidak tersedia.");
-  const result = await upstream.json() as { ok?: boolean; error?: string; id?: string; data?: unknown };
-  if (!result.ok) throw new Error(result.error || "Perubahan ditolak GAS.");
-  return result;
-}
-
 export async function GET(request: NextRequest) {
   const session = await getAdminSession();
   if (!session) return NextResponse.json({ error: "Login diperlukan." }, { status: 401 });
-
+  if (!isFirebaseConfigured()) return NextResponse.json({ error: "Firebase CMS belum dikonfigurasi." }, { status: 503, headers: { "Cache-Control": "no-store" } });
   const blocked = rateLimitResponse(await checkRateLimit(request, "content-read", 60, 60, session.email));
   if (blocked) return blocked;
-
   try {
-    const result = await callAdminGas({ action: "read_content" });
-    return NextResponse.json({ ok: true, data: result.data }, { headers: { "Cache-Control": "no-store" } });
+    const snapshot = await readCmsSnapshot(true);
+    return NextResponse.json({
+      ok: true,
+      data: { site: { ...fallbackContent.site, ...snapshot.site }, programs: snapshot.programs, gallery: snapshot.gallery },
+    }, { headers: { "Cache-Control": "no-store" } });
   } catch {
-    return NextResponse.json({ error: "Tidak bisa membaca data admin GAS." }, { status: 502 });
+    return NextResponse.json({ error: "Data CMS Firebase tidak dapat dibaca." }, { status: 503, headers: { "Cache-Control": "no-store" } });
   }
 }
 
@@ -72,28 +62,37 @@ export async function POST(request: NextRequest) {
   const session = await getAdminSession();
   if (!session) return NextResponse.json({ error: "Anda harus login sebagai admin." }, { status: 401 });
   if (!sameOrigin(request)) return NextResponse.json({ error: "Origin tidak sah." }, { status: 403 });
-
+  if (!isFirebaseConfigured()) return NextResponse.json({ error: "Firebase CMS belum dikonfigurasi." }, { status: 503, headers: { "Cache-Control": "no-store" } });
   const blocked = rateLimitResponse(await checkRateLimit(request, "content-write", 20, 60, session.email));
   if (blocked) return blocked;
-
   try {
-    const raw = await request.text();
-    if (raw.length > 35000) return NextResponse.json({ error: "Data terlalu besar." }, { status: 413 });
-    const body: unknown = JSON.parse(raw);
+    const raw = await readRequestBodyLimited(request, 35000);
+    const body: unknown = JSON.parse(raw.toString("utf8"));
     const validationError = validate(body);
     if (validationError) return NextResponse.json({ error: validationError }, { status: 400 });
     const payload = body as Record<string, unknown>;
-    if ((payload.action === "upsert_program" || payload.action === "upsert_gallery") && isPlain(payload.data)) {
-      const item = payload.data;
-      payload.data = {
-        ...item,
-        order: Number(item.order),
-        ...(payload.action === "upsert_program" ? { duration: String(item.duration) } : {}),
-      };
+    const data = payload.data as Record<string, unknown>;
+    if (payload.action === "update_site") {
+      await saveCmsSite(data, session.email);
+      return NextResponse.json({ ok: true, message: "Profil tersimpan di Firebase." }, { headers: { "Cache-Control": "no-store" } });
     }
-    const result = await callAdminGas(payload);
-    return NextResponse.json({ ok: true, id: result.id ?? null, message: "Perubahan tersimpan. Halaman publik diperbarui setelah cache berakhir." }, { headers: { "Cache-Control": "no-store" } });
-  } catch {
-    return NextResponse.json({ error: "Gagal menyimpan ke GAS. Periksa pengaturan admin dan koneksi, lalu coba lagi." }, { status: 502 });
+    if (payload.action === "upsert_program" || payload.action === "upsert_gallery") {
+      const item = {
+        ...data,
+        order: Number(data.order),
+        ...(payload.action === "upsert_program" ? { duration: String(data.duration) } : {}),
+      };
+      const id = await saveCmsItem(payload.action === "upsert_program" ? "programs" : "gallery", item, session.email);
+      return NextResponse.json({ ok: true, id, message: "Konten tersimpan di Firebase." }, { headers: { "Cache-Control": "no-store" } });
+    }
+    return NextResponse.json({ error: "Aksi tidak diperbolehkan." }, { status: 400 });
+  } catch (error) {
+    if (error instanceof RequestBodyTooLargeError) {
+      return NextResponse.json({ error: "Data terlalu besar." }, { status: 413, headers: { "Cache-Control": "no-store" } });
+    }
+    if (error instanceof SyntaxError) {
+      return NextResponse.json({ error: "Format permintaan tidak valid." }, { status: 400, headers: { "Cache-Control": "no-store" } });
+    }
+    return NextResponse.json({ error: "Gagal menyimpan perubahan ke Firebase. Periksa konfigurasi dan coba lagi." }, { status: 503, headers: { "Cache-Control": "no-store" } });
   }
 }

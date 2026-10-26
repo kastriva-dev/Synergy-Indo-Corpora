@@ -1,0 +1,10 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Website traffic goes through authenticated server endpoints.
+    // The backend uses service-account IAM; browser SDK access stays denied.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
