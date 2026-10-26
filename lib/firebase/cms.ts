@@ -8,10 +8,12 @@ export type CmsSnapshot = {
 };
 
 function publicItems(records: { id: string; data: Record<string, unknown> }[], includeUnpublished: boolean): Record<string, unknown>[] {
-  return records
-    .map(record => ({ ...record.data, id: record.id }))
-    .filter(item => includeUnpublished || item.published === true)
-    .sort((a, b) => Number(a.order || 0) - Number(b.order || 0));
+  const items: Record<string, unknown>[] = records.map(record =>
+    ({ ...(record.data as Record<string, unknown>), id: record.id }) as Record<string, unknown>
+  );
+  return items
+    .filter((item: Record<string, unknown>) => includeUnpublished || item.published === true)
+    .sort((a: Record<string, unknown>, b: Record<string, unknown>) => Number(a.order || 0) - Number(b.order || 0));
 }
 
 export async function readCmsSnapshot(includeUnpublished = false): Promise<CmsSnapshot> {

@@ -281,10 +281,13 @@ async function uploadObject(path: string, bytes: Buffer, mime: string): Promise<
   url.searchParams.set("uploadType", "media");
   url.searchParams.set("name", objectPath(path));
   url.searchParams.set("ifGenerationMatch", "0");
+  const uploadBytes = new Uint8Array(bytes.byteLength);
+  uploadBytes.set(bytes);
+  const payload = new Blob([uploadBytes.buffer as ArrayBuffer], { type: mime });
   const response = await googleFetch(url.toString(), {
     method: "POST",
     headers: { "Content-Type": mime },
-    body: bytes,
+    body: payload,
     signal: AbortSignal.timeout(45_000),
   });
   await requireOk(response, "Firebase Storage upload");
