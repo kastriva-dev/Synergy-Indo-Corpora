@@ -1,62 +1,65 @@
-# SYNERGY INDO CORPORA — Premium Interactive Company Profile
-### Tahap 1 · Frontend sinematik + GAS read-only · by Kastriva
+# Sinergi Global — Website Profil Perusahaan
 
-Website Next.js berbahasa Indonesia dengan animasi modern dan struktur Google Apps Script untuk konten publik.
+> Nama repository masih `Synergy-Indo-Corpora` karena berasal dari proyek lama yang diadaptasi. Brand website yang sedang disiapkan adalah **Sinergi Global**.
 
-## Fitur yang sudah dibuat
-- Hero fullscreen sinematik, headline beranimasi, parallax background.
-- Custom cursor (desktop) dengan label interaktif.
-- Running text otomatis yang berhenti ketika di-hover, berjalan lagi saat pointer menjauh.
-- Card program: hover tilt 3D, highlight glass-like, gambar zoom, wheel-to-horizontal dan drag, juga tombol next/prev.
-- Galeri foto interaktif: membesar/bergeser saat hover, responsif di HP.
-- Scroll reveal teks, section filosofi, alur pembelajaran, dan footer **BY KASTRIVA**.
-- Menghormati pengaturan `prefers-reduced-motion`.
-- Mengambil data `site`, `programs`, `gallery` dari Google Sheets melalui Apps Script.
-- ISR revalidasi 300 detik dan fallback konten demo jika GAS tidak tersedia.
+Website Next.js dengan tampilan premium, animasi interaktif, CMS konten berbasis Google Apps Script/Sheets, dan dashboard admin yang terpisah dari API publik.
 
-## Cara menjalankan di Windows 10/11
-1. Ekstrak ZIP proyek ke `D:\Kastriva\Synergy-Indo-Corpora` (lokasi bebas).
-2. Buka PowerShell dari folder proyek.
-3. Pastikan Node.js 20.9+ terpasang (disarankan Node.js 24).
-4. Jalankan:
+## Status saat ini
+
+- Frontend premium: hero sinematik, custom cursor desktop, kartu 3D, ticker yang berhenti saat pointer mendekat, galeri horizontal, scroll reveal, dan dukungan `prefers-reduced-motion`.
+- Integrasi konten publik GAS: **read-only** untuk profil, program/materi, dan galeri.
+- Admin CMS: kode login Google, pengelolaan profil/materi/galeri, dan upload foto ke folder Google Drive khusus tersedia di repository; konfigurasi akun milik perusahaan serta security QA end-to-end masih menjadi syarat sebelum operasional.
+- Lowongan, kategori bidang, negara tujuan, berita, dan alur proses pada homepage masih berisi **contoh desain**. Lowongan belum dikelola melalui CMS.
+- Formulir minat kandidat dan unggah CV belum aktif. Jangan mengumpulkan data pribadi kandidat pada tahap pratinjau.
+- Metadata masih memakai `noindex, nofollow` sampai konten, legalitas, domain, privasi, dan persetujuan perusahaan diverifikasi.
+- Konten demo dan gambar stok tidak boleh dianggap sebagai lowongan, kegiatan, atau klaim resmi perusahaan.
+
+## Menjalankan secara lokal (Windows)
+
+Memerlukan Node.js yang mendukung versi Next.js pada `package.json`.
 
 ```powershell
 cd D:\Kastriva\Synergy-Indo-Corpora
-npm.cmd install
+npm.cmd ci
+npm.cmd run typecheck
+npm.cmd run build
 npm.cmd run dev
 ```
 
-5. Buka browser: `http://localhost:3000`.
-6. Website langsung menampilkan **konten demo** walaupun GAS belum dipasang.
+Buka `http://localhost:3000`.
 
-> Jika `npm.cmd install` gagal, cek internet/proxy dan versi Node. Proyek belum diklaim selesai diuji build di lingkungan target; lakukan `npm.cmd run typecheck` dan `npm.cmd run build` setelah instalasi.
+## Konfigurasi environment
 
-## Menghubungkan database Google Sheets
-Ikuti panduan lengkap `gas/README_GAS.md`. Contoh file env:
+Salin `.env.example` menjadi `.env.local` untuk pengembangan lokal. Jangan commit `.env.local`, secret, atau token ke GitHub.
 
-```env
-GAS_WEB_APP_URL=https://script.google.com/macros/s/DEPLOYMENT_ID/exec
-```
+| Variabel | Kegunaan |
+|---|---|
+| `GAS_WEB_APP_URL` | Endpoint GAS publik read-only; hanya untuk konten yang boleh dilihat pengunjung |
+| `GOOGLE_CLIENT_ID` | OAuth Client ID publik untuk login Google admin |
+| `ADMIN_ALLOWED_EMAILS` | Daftar email admin yang diizinkan |
+| `ADMIN_SESSION_SECRET` | Secret sesi admin, server-side |
+| `GAS_ADMIN_WEB_APP_URL` | Endpoint GAS admin terpisah; jangan gunakan endpoint publik |
+| `GAS_ADMIN_SECRET` | Secret server-side yang harus cocok dengan Script Properties GAS admin |
+| `UPSTASH_REDIS_REST_URL` | Endpoint Upstash untuk rate limiting/nonce admin di Preview/Production |
+| `UPSTASH_REDIS_REST_TOKEN` | Token Upstash server-side |
 
-Isi `.env.local` dari `.env.example`, kemudian restart server dev. URL disimpan pada server Next.js, bukan dibaca langsung dari browser.
+Jangan gunakan prefix `NEXT_PUBLIC_` untuk secret. Untuk Preview dan Production, gunakan environment dan credential staging/production yang terpisah.
 
-## Konten yang masih placeholder dan wajib diganti
-- Logo perusahaan (saat ini logo teks/monogram sementara).
-- Foto hero dan galeri dari Unsplash (contoh, **bukan kegiatan asli PT Synergy Indo Corpora**).
-- Nama dan detail program pelatihan.
-- Sejarah, izin, alamat, kontak, dan foto fasilitas resmi.
-- Data WhatsApp dan email (belum dibuat-buat).
-- SEO indexing belum aktif secara sengaja sampai identitas resmi diverifikasi.
+## Dokumentasi utama
 
-## Tahap selanjutnya (belum dibuat)
-2. Setup GAS & Sheets milik perusahaan, masukkan profil / program / foto resmi, uji koneksi.
-3. Admin CMS ber-login aman: kelola konten, galeri, SEO, audit log, pembatasan role.
-4. Pendaftaran online LPK dengan proteksi spam, validasi, notifikasi, dan perlindungan data peserta.
-5. QA interaksi detail desktop/mobile, Core Web Vitals, optimasi gambar/video, deployment/domain, dan serah terima.
+- [Roadmap implementasi](docs/ROADMAP.md)
+- [Release readiness dan checklist peluncuran](docs/SINERGI_GLOBAL_RELEASE_READINESS.md)
+- [Rilis pratinjau sementara](docs/TEMPORARY_PRESENTATION_RELEASE.md)
+- [Security QA admin](docs/STAGE39_SECURITY_QA.md)
+- [Rate limiting dan nonce](docs/STAGE310_RATE_LIMITING.md)
+- [Upload media Google Drive](docs/STAGE3_MEDIA_UPLOAD.md)
+- [Setup GAS + Google Sheets](gas/README_GAS.md)
 
-## Catatan arsitektur
-- `app/page.tsx` membaca konten menggunakan ISR. Animasi tetap diproses di browser menggunakan GSAP.
-- Google Apps Script hanya expose kolom yang diterbitkan. Registrasi tidak pernah masuk endpoint publik.
-- Untuk produksi, konfigurasi backup Sheets, kepemilikan akun perusahaan, monitoring layanan, dan hosting sesuai lisensi penggunaan komersial.
-- Gambar menggunakan URL placeholder publik; untuk final sebaiknya pakai gambar teroptimasi dari storage/CDN milik perusahaan.
-- `robots: noindex` diterapkan pada Tahap 1 karena materi konten masih demo.
+## Catatan rilis dan hosting
+
+- Alias Vercel yang digunakan untuk presentasi: `https://synergy-indo-corpora.vercel.app/`. Ini bukan bukti bahwa domain produksi final sudah siap.
+- Metadata domain disiapkan untuk `sinergiglobal.co.id`; DNS, TLS, dan konfigurasi domain tetap harus diverifikasi.
+- Pilihan hosting harus disepakati dengan perusahaan. Jika memakai VPS klien, pastikan akses, OS, runtime Node.js, reverse proxy, HTTPS, backup, monitoring, dan prosedur rollback benar-benar tersedia. Jika tetap memakai Vercel, gunakan paket yang mengizinkan penggunaan komersial.
+- API GAS publik tidak boleh dipakai untuk menulis atau menerima CV. Data kandidat memerlukan backend privat, persetujuan privasi, kontrol akses, retensi/penghapusan data, serta pengujian keamanan tersendiri.
+
+**Rilis publik belum disetujui.** Lihat checklist rilis sebelum mengaktifkan indexing, lowongan nyata, pendaftaran, atau upload CV.
