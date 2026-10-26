@@ -164,7 +164,44 @@ export default function PremiumHome({ content }: { content: PublicContent }) {
       gsap.fromTo(".hero-reveal", { y: 32, autoAlpha: 0 }, {
         y: 0, autoAlpha: 1, duration: 0.9, ease: "power3.out", stagger: 0.1, delay: 0.12,
       });
-      gsap.fromTo(".hero__photo", { scale: 1.08 }, { scale: 1, duration: 1.8, ease: "power2.out" });
+      gsap.fromTo(".hero__photo", { scale: 1.12 }, { scale: 1.06, duration: 1.8, ease: "power2.out" });
+      gsap.to(".hero__photo", {
+        yPercent: 7,
+        ease: "none",
+        scrollTrigger: { trigger: ".hero", start: "top top", end: "bottom top", scrub: 0.7 },
+      });
+      gsap.to(".hero__grid", {
+        yPercent: -5,
+        ease: "none",
+        scrollTrigger: { trigger: ".hero", start: "top top", end: "bottom top", scrub: 0.7 },
+      });
+
+      const depthImages = gsap.utils.toArray<HTMLElement>(
+        ".job-card__image img, .news-card__image img, .ceo-media > img",
+      );
+      depthImages.forEach((image) => {
+        const trigger = image.closest<HTMLElement>(".job-card, .news-card, .ceo-media") ?? image;
+        gsap.fromTo(
+          image,
+          { "--image-parallax-y": "3%" },
+          {
+            "--image-parallax-y": "-3%",
+            ease: "none",
+            scrollTrigger: { trigger, start: "top bottom", end: "bottom top", scrub: 0.65 },
+          },
+        );
+      });
+
+      gsap.utils.toArray<HTMLElement>(".section-kicker.reveal .section-kicker__line").forEach((line) => {
+        const trigger = line.closest<HTMLElement>(".section-kicker") ?? line;
+        gsap.fromTo(line, { scaleX: 0, transformOrigin: "left center" }, {
+          scaleX: 1,
+          duration: 0.75,
+          ease: "power2.out",
+          scrollTrigger: { trigger, start: "top 90%", once: true },
+        });
+      });
+
       const staggerGroups = gsap.utils.toArray<HTMLElement>(
         ".about-values, .work-grid, .jobs-grid, .country-list, .process-list, .news-grid",
       );
@@ -183,10 +220,29 @@ export default function PremiumHome({ content }: { content: PublicContent }) {
       });
       gsap.utils.toArray<HTMLElement>(".reveal").forEach((element) => {
         if (groupedRevealElements.has(element)) return;
-        gsap.fromTo(element, { y: 28, autoAlpha: 0 }, {
-          y: 0, autoAlpha: 1, duration: 0.7, ease: "power2.out",
-          scrollTrigger: { trigger: element, start: "top 90%", once: true },
-        });
+        const isDisplayTitle = element.classList.contains("display-title");
+        gsap.fromTo(
+          element,
+          isDisplayTitle
+            ? { clipPath: "inset(0 0 100% 0)", y: 24, autoAlpha: 0 }
+            : { y: 28, autoAlpha: 0 },
+          isDisplayTitle
+            ? {
+                clipPath: "inset(0 0 0 0)",
+                y: 0,
+                autoAlpha: 1,
+                duration: 0.95,
+                ease: "power3.out",
+                scrollTrigger: { trigger: element, start: "top 90%", once: true },
+              }
+            : {
+                y: 0,
+                autoAlpha: 1,
+                duration: 0.7,
+                ease: "power2.out",
+                scrollTrigger: { trigger: element, start: "top 90%", once: true },
+              },
+        );
       });
     }, root);
     return () => context.revert();

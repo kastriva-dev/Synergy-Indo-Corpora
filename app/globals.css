@@ -650,3 +650,44 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   }
 }
 
+/* Cinematic scroll depth for the hero and editorial imagery. */
+@media (prefers-reduced-motion: no-preference) {
+  .hero__photo,
+  .hero__grid {
+    will-change: transform;
+  }
+
+  .job-card__image img,
+  .news-card__image img,
+  .ceo-media > img {
+    --image-parallax-y: 0%;
+    --image-scale: 1.08;
+    transform: translate3d(0, var(--image-parallax-y), 0) scale(var(--image-scale));
+    transform-origin: center;
+    will-change: transform;
+  }
+
+  .job-card:hover .job-card__image img,
+  .news-card:hover .news-card__image img,
+  .ceo-media:hover > img {
+    --image-scale: 1.14;
+  }
+
+  .job-card.motion-card-active .job-card__image img,
+  .news-card.motion-card-active .news-card__image img,
+  .ceo-media.motion-card-active > img {
+    --image-scale: 1.14;
+    transform: translate3d(0, var(--image-parallax-y, 0%), 0) scale(var(--image-scale, 1.08));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero__photo,
+  .hero__grid,
+  .job-card__image img,
+  .news-card__image img,
+  .ceo-media > img {
+    will-change: auto;
+  }
+}
+
