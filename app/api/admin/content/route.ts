@@ -5,6 +5,7 @@ import { checkRateLimit, rateLimitResponse } from "@/lib/admin/rate-limit";
 import { isFirebaseConfigured } from "@/lib/firebase/server";
 import { readCmsSnapshot, saveCmsItem, saveCmsSite } from "@/lib/firebase/cms";
 import { fallbackContent } from "@/lib/content";
+import { readRequestBodyLimited, RequestBodyTooLargeError } from "@/lib/http/read-request-body-limited";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -65,9 +66,8 @@ export async function POST(request: NextRequest) {
   const blocked = rateLimitResponse(await checkRateLimit(request, "content-write", 20, 60, session.email));
   if (blocked) return blocked;
   try {
-    const raw = await request.text();
-    if (raw.length > 35000) return NextResponse.json({ error: "Data terlalu besar." }, { status: 413 });
-    const body: unknown = JSON.parse(raw);
+    const raw = await readRequestBodyLimited(request, 35000);
+    const body: unknown = JSON.parse(raw.toString("utf8"));
     const validationError = validate(body);
     if (validationError) return NextResponse.json({ error: validationError }, { status: 400 });
     const payload = body as Record<string, unknown>;
@@ -86,7 +86,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ ok: true, id, message: "Konten tersimpan di Firebase." }, { headers: { "Cache-Control": "no-store" } });
     }
     return NextResponse.json({ error: "Aksi tidak diperbolehkan." }, { status: 400 });
-  } catch {
+  } catch (error) {
+    if (error instanceof RequestBodyTooLargeError) {
+      return NextResponse.json({ error: "Data terlalu besar." }, { status: 413, headers: { "Cache-Control": "no-store" } });
+    }
+    if (error instanceof SyntaxError) {
+      return NextResponse.json({ error: "Format permintaan tidak valid." }, { status: 400, headers: { "Cache-Control": "no-store" } });
+    }
     return NextResponse.json({ error: "Gagal menyimpan perubahan ke Firebase. Periksa konfigurasi dan coba lagi." }, { status: 503, headers: { "Cache-Control": "no-store" } });
   }
 }
