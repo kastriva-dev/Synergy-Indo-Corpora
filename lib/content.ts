@@ -80,7 +80,7 @@ function containsLegacyBrandContent(value: unknown): boolean {
 }
 
 export async function getPublicContent(): Promise<PublicContent> {
-  // Meeting preview only: GAS is a read-only CMS source and takes precedence while configured.
+  // Temporary presentation release: GAS may supply public site content only; candidate applications and CVs remain Firebase-only and disabled until approved.
   const gasUrl = process.env.GAS_WEB_APP_URL?.trim();
   if (gasUrl) {
     try {
