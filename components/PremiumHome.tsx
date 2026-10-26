@@ -165,7 +165,24 @@ export default function PremiumHome({ content }: { content: PublicContent }) {
         y: 0, autoAlpha: 1, duration: 0.9, ease: "power3.out", stagger: 0.1, delay: 0.12,
       });
       gsap.fromTo(".hero__photo", { scale: 1.08 }, { scale: 1, duration: 1.8, ease: "power2.out" });
+      const staggerGroups = gsap.utils.toArray<HTMLElement>(
+        ".about-values, .work-grid, .jobs-grid, .country-list, .process-list, .news-grid",
+      );
+      const groupedRevealElements = new Set<HTMLElement>();
+      staggerGroups.forEach((group) => {
+        const items = Array.from(group.children).filter(
+          (child): child is HTMLElement =>
+            child instanceof HTMLElement && child.classList.contains("reveal"),
+        );
+        if (!items.length) return;
+        items.forEach((item) => groupedRevealElements.add(item));
+        gsap.fromTo(items, { y: 26, autoAlpha: 0 }, {
+          y: 0, autoAlpha: 1, duration: 0.72, stagger: 0.11, ease: "power3.out",
+          scrollTrigger: { trigger: group, start: "top 88%", once: true },
+        });
+      });
       gsap.utils.toArray<HTMLElement>(".reveal").forEach((element) => {
+        if (groupedRevealElements.has(element)) return;
         gsap.fromTo(element, { y: 28, autoAlpha: 0 }, {
           y: 0, autoAlpha: 1, duration: 0.7, ease: "power2.out",
           scrollTrigger: { trigger: element, start: "top 90%", once: true },
