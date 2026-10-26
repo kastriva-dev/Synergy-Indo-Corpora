@@ -19,7 +19,8 @@ export default function WalkingApplicant() {
         <span className="walking-applicant-stage__rule" />
       </div>
       <div className="walking-applicant-stage__path" />
-      <div className={`walking-applicant ${gender === "woman" ? "is-woman" : "is-man"}`} onAnimationIteration={alternateCharacter}>
+      <div className="walking-applicant-track" onAnimationIteration={alternateCharacter}>
+        <div className={`walking-applicant ${gender === "woman" ? "is-woman" : "is-man"}`}>
         <svg
           className={`walking-applicant__figure walking-applicant__figure--${gender}`}
           viewBox="0 0 160 220"
@@ -121,6 +122,7 @@ export default function WalkingApplicant() {
             {gender === "woman" && <path d="M91 53 Q101 60 111 51 L108 58 L98 60 Z" fill="#332726" opacity=".9" />}
           </g>
         </svg>
+        </div>
       </div>
     </div>
   );
