@@ -27,12 +27,12 @@ export type PublicContent = { site: SiteContent; programs: Program[]; gallery: G
 export const fallbackContent: PublicContent = {
   source: "demo",
   site: {
-    hero_eyebrow: "LEMBAGA PELATIHAN KERJA  /  COMPANY PROFILE",
+    hero_eyebrow: "MEMBUKA PELUANG KARIER INTERNASIONAL",
     hero_title_1: "KOMPETENSI",
     hero_title_2: "UNTUK MASA",
     hero_title_accent: "DEPAN.",
     hero_description: "Ruang tumbuh bagi individu yang ingin mengasah keterampilan, membangun kepercayaan diri, dan mempersiapkan langkah berikutnya dalam dunia kerja.",
-    about_description: "Synergy Indo Corpora berorientasi pada pengembangan kompetensi dan pengalaman belajar yang relevan. Informasi resmi mengenai program, fasilitas, dan legalitas akan dilengkapi bersama tim perusahaan.",
+    about_description: "Sinergi Global berfokus pada kualitas kandidat dan kesiapan tenaga kerja untuk peluang internasional. Profil resmi, cakupan layanan, serta legalitas akan dikonfirmasi perusahaan.",
     contact_whatsapp: "",
     contact_email: "",
     contact_address: "Informasi alamat akan diperbarui",
@@ -61,13 +61,18 @@ function coerceItems<T extends Program | GalleryItem>(items: unknown, fallbacks:
   return items.slice(0, 24).filter((item) => item && typeof item === "object" && item.published === true).map((item: Record<string, unknown>, index) => ({
     ...item,
     id: safeString(item.id, `item-${index}`),
-    title: safeString(item.title, "Program Synergy"),
-    category: safeString(item.category, "SYNERGY"),
+    title: safeString(item.title, "Konten Sinergi Global"),
+    category: safeString(item.category, "SINERGI GLOBAL"),
     image_url: isImageUrl(item.image_url) ? item.image_url : "",
     order: Number.isFinite(Number(item.order)) ? Number(item.order) : index,
     ...(typeof item.description !== "undefined" ? { description: safeString(item.description, "") } : {}),
     ...(typeof item.duration !== "undefined" ? { duration: safeString(item.duration, "") } : {}),
   } as T)).sort((a, b) => a.order - b.order);
+}
+
+function containsLegacyBrandContent(value: unknown): boolean {
+  const serialized = (JSON.stringify(value) || "").toLowerCase();
+  return /synergy indo corpora|lembaga pelatihan kerja|\blpk\b/.test(serialized);
 }
 
 export async function getPublicContent(): Promise<PublicContent> {
@@ -85,11 +90,15 @@ export async function getPublicContent(): Promise<PublicContent> {
     const body = await response.json();
     if (body?.ok !== true || !body.data || typeof body.data !== "object") throw new Error("Response format invalid");
     const raw = body.data as Record<string, unknown>;
+    if (containsLegacyBrandContent(raw)) {
+      console.warn("Sinergi Global: GAS masih berisi konten merek lama; memakai konten pratinjau aman.");
+      return fallbackContent;
+    }
     const siteRaw = raw.site && typeof raw.site === "object" ? raw.site as Record<string, unknown> : {};
     const site = Object.fromEntries(Object.entries(fallbackContent.site).map(([key, value]) => [key, safeString(siteRaw[key], value)])) as SiteContent;
     return { source: "gas", site, programs: coerceItems(raw.programs, fallbackContent.programs), gallery: coerceItems(raw.gallery, fallbackContent.gallery) };
   } catch (error) {
-    console.warn("Synergy: GAS tidak tersedia, menampilkan fallback konten:", error instanceof Error ? error.message : "unknown error");
+    console.warn("Sinergi Global: GAS tidak tersedia, menampilkan konten pratinjau aman:", error instanceof Error ? error.message : "unknown error");
     return fallbackContent;
   }
 }
