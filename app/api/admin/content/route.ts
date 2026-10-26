@@ -26,7 +26,7 @@ function validate(body: unknown): string | null {
       typeof data.category !== "string" || data.category.length > 100 ||
       typeof data.published !== "boolean" ||
       !Number.isInteger(Number(data.order)) || Number(data.order) < 0 || Number(data.order) > 9999 ||
-      !validImage(data.image_url)) return "Data program atau galeri tidak valid.";
+      !validImage(data.image_url)) return "Data program, galeri, atau lowongan tidak valid.";
   if (data.published && !data.image_url) return "Unggah foto sebelum mempublikasikan konten.";
   const validDuration = typeof data.duration === "string"
     ? data.duration.length <= 100

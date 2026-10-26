@@ -95,9 +95,9 @@ function coerceJobs(items: unknown): JobListing[] {
     .filter((item) => item && typeof item === "object" && item.published === true)
     .map((item: Record<string, unknown>, index) => ({
       id: safeString(item.id, `job-${index}`),
-      title: safeString(item.title, "Posisi"),
-      country: safeString(item.country, "Negara belum ditentukan"),
-      category: safeString(item.category, "Bidang umum"),
+      title: safeString(item.title, "Posisi").slice(0, 160),
+      country: safeString(item.country, "Negara belum ditentukan").slice(0, 100),
+      category: safeString(item.category, "Bidang umum").slice(0, 100),
       summary: typeof item.summary === "string" ? item.summary.slice(0, 600) : "",
       image_url: isImageUrl(item.image_url) ? item.image_url : "",
       published: true,

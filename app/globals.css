@@ -205,6 +205,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .countries-copy .display-title span { color: var(--sg-lime); }
 .countries-copy > p { max-width: 445px; margin: 24px 0 29px; color: #b7c7ce; font-size: 13px; line-height: 1.85; }
 .country-list { border-top: 1px solid #ffffff35; }
+.country-empty { margin: 0; padding: 26px 2px; border-bottom: 1px solid #ffffff35; color: #a4b7c1; font-size: 12px; line-height: 1.8; }
 .country-row { display: grid; grid-template-columns: 40px 42px minmax(0, 1fr) 22px; align-items: center; gap: 16px; width: 100%; padding: 22px 2px; border: 0; border-bottom: 1px solid #ffffff35; color: #fff; background: transparent; text-align: left; transition: padding .2s, background .2s; }
 .country-row:hover { padding-inline: 12px; background: #ffffff08; }
 .country-row__index { color: #8197a3; font-size: 10px; font-weight: 800; }

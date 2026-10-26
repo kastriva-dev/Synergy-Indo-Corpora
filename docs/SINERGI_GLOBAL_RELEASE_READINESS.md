@@ -16,8 +16,7 @@
 - Metadata website masih `noindex, nofollow`.
 - CMS lowongan dinamis kini sudah ditambahkan pada source Next.js dan GAS: admin dapat membuat/mengedit posisi, menyimpan draft atau menerbitkan, serta mengunggah foto melalui folder Drive media yang sama.
 - Website mengambil lowongan terbit beserta kategori dan negara dari endpoint publik. Jika CMS terhubung tetapi belum ada posisi terbit, halaman menampilkan empty state, bukan data contoh. Data contoh hanya dipakai pada mode pratinjau/demo.
-- Fitur tersebut belum operasional sampai source GAS publik/admin disalin dan dideploy, tab jobs dibuat melalui setup, dan alur end-to-end diuji. Formulir minat kandidat dan unggah CV tetap nonaktif.
-- Formulir minat kandidat dan unggah CV belum aktif. Jangan mengaktifkannya dengan hanya menambahkan form di frontend.
+- Fitur tersebut belum operasional sampai source GAS publik/admin disalin dan dideploy, tab jobs dibuat melalui setup, dan alur end-to-end diuji. Formulir minat kandidat dan unggah CV tetap nonaktif; jangan mengaktifkannya dengan hanya menambahkan form di frontend.
 - Materi legal, identitas, foto kegiatan, dan detail posisi final masih perlu disetujui perusahaan.
 - Koneksi Vercel ke domain tim tidak tersedia untuk inspeksi browser otomatis pada sesi ini. Status build bukan pengganti UAT visual manual.
 - `sinergiglobal.co.id` sudah menjadi basis metadata, tetapi DNS, sertifikat TLS, dan konfigurasi domain belum diverifikasi lewat pemeriksaan ini.

@@ -7,7 +7,7 @@
 | 1 · Frontend premium | Kode utama selesai; UAT visual manual masih perlu dilakukan | Desktop/mobile diuji, navigasi keyboard dan reduced motion lolos |
 | 2 · CMS konten publik GAS | Endpoint read-only tersedia; konten resmi dan kepemilikan akun perlu diverifikasi | Hanya konten terbit yang keluar dari API publik; tidak ada data admin/kandidat |
 | 3 · Admin CMS dan media | Kode login Google, editor konten, upload Drive, rate limit/nonce tersedia di repository; konfigurasi dan pengujian end-to-end masih diperlukan | Login allowlist, API admin, upload, fail-closed, audit, backup/restore, dan security QA lulus |
-| 4 · CMS lowongan dinamis | Kode Next.js + GAS tersedia di branch pengembangan; deployment GAS dan UAT end-to-end masih perlu | Lowongan, kategori, dan negara berasal dari data terverifikasi dan bisa dikelola admin; draft tidak tampil publik dan halaman kosong tidak memakai data contoh |
+| 4 · CMS lowongan dinamis | Kode Next.js + GAS tersedia di repository; deployment GAS dan UAT end-to-end masih perlu | Lowongan, kategori, dan negara berasal dari data terverifikasi dan bisa dikelola admin; draft tidak tampil publik dan halaman kosong tidak memakai data contoh |
 | 5 · Minat kandidat dan CV | Sengaja nonaktif/belum siap | Backend privat milik perusahaan, validasi upload, anti-spam, privasi, retensi, akses, notifikasi, dan uji keamanan lulus |
 | 6 · Peluncuran publik | Belum disetujui | Materi resmi, domain/hosting, SEO, UAT, monitoring, backup, dan rollback disetujui |
 
