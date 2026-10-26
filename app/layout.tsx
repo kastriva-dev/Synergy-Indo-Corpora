@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import CardMotion from "@/components/CardMotion";
 import CustomCursor from "@/components/CustomCursor";
 import "./globals.css";
 
@@ -13,5 +14,5 @@ export const metadata: Metadata = {
 export const viewport: Viewport = { themeColor: "#071a29", width: "device-width", initialScale: 1 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
-  return <html lang="id"><body>{children}<CustomCursor /></body></html>;
+  return <html lang="id"><body>{children}<CardMotion /><CustomCursor /></body></html>;
 }

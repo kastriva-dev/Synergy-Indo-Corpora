@@ -575,3 +575,77 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   .custom-cursor__ring,
   .custom-cursor__label { transition: none !important; }
 }
+
+/* Pointer-driven card depth: subtle 3D tilt and a soft light that follows the pointer. */
+@media (hover: hover) and (pointer: fine) {
+  .value-card,
+  .work-card,
+  .job-card,
+  .news-card,
+  .ceo-media {
+    --motion-rotate-x: 0deg;
+    --motion-rotate-y: 0deg;
+    --motion-pointer-x: 50%;
+    --motion-pointer-y: 50%;
+    transform-style: preserve-3d;
+    transform-origin: center;
+    transition: transform .22s cubic-bezier(.2, .75, .25, 1), box-shadow .3s ease, border-color .25s ease;
+  }
+
+  .value-card.motion-card-active,
+  .work-card.motion-card-active,
+  .job-card.motion-card-active,
+  .news-card.motion-card-active,
+  .ceo-media.motion-card-active {
+    transform: perspective(1050px) rotateX(var(--motion-rotate-x)) rotateY(var(--motion-rotate-y)) translateY(-5px) !important;
+    box-shadow: 0 24px 60px #071a2918, 0 0 0 1px #d8f36a35;
+  }
+
+  .value-card::after,
+  .work-card::after,
+  .job-card::after,
+  .news-card::after,
+  .ceo-media::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    border-radius: inherit;
+    pointer-events: none;
+    opacity: 0;
+    background: radial-gradient(260px circle at var(--motion-pointer-x) var(--motion-pointer-y), #d8f36a24, transparent 72%);
+    transition: opacity .24s ease;
+  }
+
+  .value-card.motion-card-active::after,
+  .work-card.motion-card-active::after,
+  .job-card.motion-card-active::after,
+  .news-card.motion-card-active::after,
+  .ceo-media.motion-card-active::after {
+    opacity: 1;
+  }
+
+  .value-card__icon,
+  .work-card__icon {
+    transition: transform .32s cubic-bezier(.2, .75, .25, 1), box-shadow .32s ease;
+  }
+
+  .value-card.motion-card-active .value-card__icon,
+  .work-card.motion-card-active .work-card__icon {
+    transform: translateZ(14px);
+    box-shadow: 0 10px 22px #167d721c;
+  }
+
+  .job-card__image img,
+  .news-card__image img,
+  .ceo-media > img {
+    transition: transform .7s cubic-bezier(.2, .7, .2, 1);
+  }
+
+  .job-card.motion-card-active .job-card__image img,
+  .news-card.motion-card-active .news-card__image img,
+  .ceo-media.motion-card-active > img {
+    transform: scale(1.07);
+  }
+}
+
