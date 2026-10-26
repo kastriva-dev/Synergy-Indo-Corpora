@@ -35,11 +35,18 @@ export default function AdminDashboard({ email, initial, backendReady }: { email
   const [failure, setFailure] = useState("");
   // Never allow mutations on the basis of environment variables alone.
   // Only a successful, validated admin API read unlocks the editor.
-  const backendConfigured = backendReady && initial.source === "gas";
+  const backendConfigured = backendReady;
   const [adminLoad, setAdminLoad] = useState<"loading" | "ready" | "failed">(
     backendConfigured ? "loading" : "failed"
   );
   const canWrite = backendConfigured && adminLoad === "ready";
+  const adminStatusMessage = canWrite
+    ? initial.source === "gas"
+      ? "Koneksi GAS Admin sudah diuji dan editor siap menyimpan."
+      : "API admin privat terverifikasi, tetapi GAS publik masih memakai konten cadangan. Perubahan dapat tersimpan namun belum tentu terlihat di homepage sampai endpoint publik diperbaiki."
+    : adminLoad === "loading"
+      ? "Memverifikasi koneksi dan data privat GAS Admin — tombol Simpan dikunci."
+      : "Mode baca saja — API Admin belum terverifikasi. Periksa login, konfigurasi GAS, dan status database.";
 
   useEffect(() => {
     if (!backendConfigured) {
@@ -121,7 +128,7 @@ export default function AdminDashboard({ email, initial, backendReady }: { email
     <main className="admin-main">
       <div className="admin-topbar"><span>SINERGI GLOBAL / ADMIN PANEL <b>/</b> {nav.find(n=>n.key===tab)?.label.toUpperCase()}</span><a href="/" target="_blank" rel="noreferrer">LIHAT WEBSITE <ArrowUpRight size={16}/></a></div>
       <header className="admin-main-head"><span className="admin-eyebrow">✳ &nbsp; SITE MANAGEMENT / 2026</span><h1>{({overview:"CONTROL CENTER",site:"COMPANY PROFILE",jobs:"JOB LISTINGS",programs:"PROGRAM / MATERI",gallery:"MEDIA GALLERY"} as Record<Tab,string>)[tab]}<em>.</em></h1><p>Kelola profil, lowongan, program, dan galeri Sinergi Global tanpa mengubah source code atau animasi.</p></header>
-      <div className={`admin-status ${canWrite ? "good" : "bad"}`}><ShieldCheck size={18}/><span>{canWrite ? "Koneksi GAS Admin sudah diuji dan editor siap menyimpan." : adminLoad === "loading" ? "Memverifikasi koneksi dan data privat GAS Admin — tombol Simpan dikunci." : "Mode baca saja — API Admin belum terverifikasi. Periksa login, konfigurasi GAS, dan status database."}</span></div>
+      <div className={`admin-status ${canWrite ? "good" : "bad"}`}><ShieldCheck size={18}/><span>{adminStatusMessage}</span></div>
       {notice && <div className="admin-alert success" role="status">{notice}</div>}
       {failure && <div className="admin-alert danger" role="alert">{failure}</div>}
       {tab === "overview" && <section className="admin-overview"><div className="admin-stat"><small>01 / LOWONGAN</small><strong>{jobs.filter(job=>job.published).length.toString().padStart(2,"0")}</strong><span>Lowongan terpublikasi</span></div><div className="admin-stat"><small>02 / MEDIA</small><strong>{gallery.filter(g=>g.published).length.toString().padStart(2,"0")}</strong><span>Foto galeri terpublikasi</span></div><div className="admin-stat"><small>03 / DATA SOURCE</small><strong className="admin-source">{initial.source.toUpperCase()}</strong><span>Sumber halaman saat ini</span></div><div className="admin-intro"><span className="admin-eyebrow">WORKSPACE / SINERGI GLOBAL</span><h2>Konten perusahaan.<br/><em>Di satu tempat.</em></h2><p>Perbarui profil, lowongan, dan dokumentasi. Konten publik memerlukan beberapa menit untuk memperbarui cache. Pendaftaran kandidat dan unggah CV tetap nonaktif.</p><button className="admin-primary" onClick={()=>setTab("site")}>MULAI KELOLA KONTEN <ArrowUpRight size={17}/></button></div></section>}
