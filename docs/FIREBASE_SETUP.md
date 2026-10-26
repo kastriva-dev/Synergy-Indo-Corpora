@@ -41,11 +41,11 @@ A no-dependency migration utility is included at scripts/migrate-gas-cms-to-fire
 2. In a local uncommitted .env.local, temporarily define GAS_ADMIN_WEB_APP_URL and GAS_ADMIN_SECRET together with staging Firebase values. The live website runtime does not use the legacy GAS variables.
 3. Preview the export first: node --env-file=.env.local scripts/migrate-gas-cms-to-firebase.mjs
 4. Review the summary and make sure the selected Firebase project is the staging project owned by the client. The default run does not write data.
-5. Only after checking the summary and a backup, run: node --env-file=.env.local scripts/migrate-gas-cms-to-firebase.mjs --apply
+5. Only after reviewing the actual content preview and making a backup, select what truly belongs on the new brand. For example, to import only the profile fields use: node --env-file=.env.local scripts/migrate-gas-cms-to-firebase.mjs --apply --site. To import approved work-area cards and gallery as well, explicitly add --programs and/or --gallery. The command --apply without a collection flag is rejected.
 6. Verify site text, image URLs, program/gallery counts, preserved IDs, and published/draft visibility in Firestore and Vercel Preview. Keep the legacy spreadsheet/export until the company signs off.
 7. If an image or field is rejected by validation, review it with the company and edit the source deliberately rather than weakening the URL allowlist.
 
-The migration upserts approved CMS documents by existing IDs so repeated runs update the same records. It does not migrate applicant records, CV files or admin account secrets. Existing approved Unsplash/Drive image URLs remain accepted; new CMS uploads use Firebase Storage.
+The migration upserts only explicitly selected CMS collections by existing IDs so repeated runs update the same records. Legacy LPK content may not belong to Sinergi Global; inspect the full preview and do not import an old profile, program or gallery item unless the company approves it. It does not migrate applicant records, CV files or admin account secrets. Existing approved Unsplash/Drive image URLs remain accepted; new CMS uploads use Firebase Storage.
 
 ## 5. Preview configuration and checks
 

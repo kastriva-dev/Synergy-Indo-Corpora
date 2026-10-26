@@ -7,6 +7,14 @@
 import { createSign } from "node:crypto";
 
 const apply = process.argv.includes("--apply");
+const selected = {
+  site: process.argv.includes("--site"),
+  programs: process.argv.includes("--programs"),
+  gallery: process.argv.includes("--gallery"),
+};
+if (apply && !Object.values(selected).some(Boolean)) {
+  throw new Error("Choose one or more collections explicitly: --site, --programs, --gallery. No data was changed.");
+}
 const allowedSiteKeys = [
   "hero_eyebrow", "hero_title_1", "hero_title_2", "hero_title_accent",
   "hero_description", "about_description", "contact_whatsapp", "contact_email", "contact_address",
@@ -187,24 +195,37 @@ async function upsertDocument(accessToken, projectId, collection, id, data) {
 async function main() {
   const payload = await readLegacyCms();
   const summary = {
+    mode: apply ? "APPLY" : "DRY RUN",
+    selectedForWrite: selected,
     siteFields: Object.keys(payload.site).length,
     programs: payload.programs.length,
     gallery: payload.gallery.length,
     skippedPrograms: payload.skippedPrograms,
     skippedGallery: payload.skippedGallery,
-    mode: apply ? "APPLY" : "DRY RUN",
   };
   console.log(JSON.stringify(summary, null, 2));
+  console.log("Legacy CMS preview — verify this information belongs on the Sinergi Global website:");
+  console.log(JSON.stringify({
+    site: payload.site,
+    programs: payload.programs.map(({ id, title, category, published, image_url }) => ({ id, title, category, published, hasApprovedImage: Boolean(image_url) })),
+    gallery: payload.gallery.map(({ id, title, category, published, image_url }) => ({ id, title, category, published, hasApprovedImage: Boolean(image_url) })),
+  }, null, 2));
   if (!apply) {
-    console.log("Dry run only. No Firebase writes were made. Review the summary and target project before using --apply.");
+    console.log("Dry run only. No Firebase writes were made. Review the preview and select only appropriate collections with --apply.");
     return;
   }
   const { accessToken, projectId } = await getAccessToken();
-  const site = { ...payload.site, migrated_at: new Date().toISOString(), migration_source: "legacy_gas_cms" };
-  await upsertDocument(accessToken, projectId, "site_content", "public", site);
-  for (const item of payload.programs) await upsertDocument(accessToken, projectId, "programs", item.id, item);
-  for (const item of payload.gallery) await upsertDocument(accessToken, projectId, "gallery", item.id, item);
-  console.log("CMS migration finished. Verify Firestore counts, published/draft state and public images in Preview.");
+  if (selected.site) {
+    const site = { ...payload.site, migrated_at: new Date().toISOString(), migration_source: "legacy_gas_cms" };
+    await upsertDocument(accessToken, projectId, "site_content", "public", site);
+  }
+  if (selected.programs) {
+    for (const item of payload.programs) await upsertDocument(accessToken, projectId, "programs", item.id, item);
+  }
+  if (selected.gallery) {
+    for (const item of payload.gallery) await upsertDocument(accessToken, projectId, "gallery", item.id, item);
+  }
+  console.log("Selected CMS migration finished. Verify Firestore counts, published/draft state and public images in Preview.");
 }
 main().catch(error => {
   console.error("CMS migration failed:", error instanceof Error ? error.message : "Unknown error");
