@@ -10,91 +10,22 @@ import {
   HardHat, Hotel, Instagram, Linkedin, Mail, MapPin, Menu, Play, Search,
   ShieldCheck, UploadCloud, Users, Warehouse, Wrench, X, Zap
 } from "lucide-react";
-import type { PublicContent } from "@/lib/content";
+import type { JobListing, PublicContent } from "@/lib/content";
 import SafeMediaImage from "@/components/media/SafeMediaImage";
 
-type JobSample = {
-  id: string;
-  title: string;
-  country: string;
-  category: string;
-  summary: string;
-  image: string;
-  flag: string;
+const countryFlagByName: Record<string, string> = {
+  poland: "🇵🇱", germany: "🇩🇪", netherlands: "🇳🇱", "czech republic": "🇨🇿",
+  france: "🇫🇷", italy: "🇮🇹", spain: "🇪🇸", austria: "🇦🇹", belgium: "🇧🇪",
+  denmark: "🇩🇰", norway: "🇳🇴", sweden: "🇸🇪", finland: "🇫🇮", switzerland: "🇨🇭",
+  romania: "🇷🇴", hungary: "🇭🇺", croatia: "🇭🇷", japan: "🇯🇵", "south korea": "🇰🇷",
+  singapore: "🇸🇬", "saudi arabia": "🇸🇦", "united arab emirates": "🇦🇪", "united kingdom": "🇬🇧",
 };
-
-const jobSamples: JobSample[] = [
-  {
-    id: "pl-welder",
-    title: "Welder / Juru Las",
-    country: "Poland",
-    category: "Welding",
-    summary: "Contoh posisi untuk tenaga kerja terampil di bidang pengelasan dan fabrikasi.",
-    image: "https://images.unsplash.com/photo-1504917595217-d4dc5ebe6122?auto=format&fit=crop&w=1000&q=82",
-    flag: "🇵🇱",
-  },
-  {
-    id: "pl-warehouse",
-    title: "Warehouse Operator",
-    country: "Poland",
-    category: "Warehouse",
-    summary: "Contoh peran untuk operasional gudang, penataan barang, dan proses logistik.",
-    image: "https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?auto=format&fit=crop&w=1000&q=82",
-    flag: "🇵🇱",
-  },
-  {
-    id: "de-electrician",
-    title: "Electrician",
-    country: "Germany",
-    category: "Electrical",
-    summary: "Contoh posisi teknis untuk instalasi dan pemeliharaan kelistrikan.",
-    image: "https://images.unsplash.com/photo-1621905251189-08b45d6a269e?auto=format&fit=crop&w=1000&q=82",
-    flag: "🇩🇪",
-  },
-  {
-    id: "cz-production",
-    title: "Production Operator",
-    country: "Czech Republic",
-    category: "Manufacturing",
-    summary: "Contoh peran untuk kegiatan produksi dan pengoperasian proses manufaktur.",
-    image: "https://images.unsplash.com/photo-1581092160562-40aa08e78837?auto=format&fit=crop&w=1000&q=82",
-    flag: "🇨🇿",
-  },
-  {
-    id: "nl-hospitality",
-    title: "Hospitality Crew",
-    country: "Netherlands",
-    category: "Hospitality",
-    summary: "Contoh peran layanan dan operasional hospitality dengan orientasi pelayanan.",
-    image: "https://images.unsplash.com/photo-1551218808-94e220e084d2?auto=format&fit=crop&w=1000&q=82",
-    flag: "🇳🇱",
-  },
-  {
-    id: "de-construction",
-    title: "Construction Worker",
-    country: "Germany",
-    category: "Construction",
-    summary: "Contoh posisi pendukung proyek konstruksi dan pekerjaan lapangan.",
-    image: "https://images.unsplash.com/photo-1504307651254-35680f356dfd?auto=format&fit=crop&w=1000&q=82",
-    flag: "🇩🇪",
-  },
-];
-
-const workAreas = [
-  { name: "Hospitality", detail: "Hotel, layanan, dan operasional hospitality.", icon: Hotel, number: "01" },
-  { name: "Manufacturing", detail: "Produksi, perakitan, dan proses manufaktur.", icon: Factory, number: "02" },
-  { name: "Electrical", detail: "Instalasi dan pekerjaan teknis kelistrikan.", icon: Zap, number: "03" },
-  { name: "Warehouse", detail: "Gudang, distribusi, dan dukungan logistik.", icon: Warehouse, number: "04" },
-  { name: "Construction", detail: "Pekerjaan lapangan dan dukungan konstruksi.", icon: HardHat, number: "05" },
-  { name: "Welding", detail: "Pengelasan, fabrikasi, dan pekerjaan logam.", icon: Wrench, number: "06" },
-];
-
-const countries = [
-  { name: "Poland", flag: "🇵🇱", note: "Contoh negara tujuan" },
-  { name: "Germany", flag: "🇩🇪", note: "Contoh negara tujuan" },
-  { name: "Netherlands", flag: "🇳🇱", note: "Contoh negara tujuan" },
-  { name: "Czech Republic", flag: "🇨🇿", note: "Contoh negara tujuan" },
-];
+const areaIconByName: Record<string, typeof Briefcase> = {
+  hospitality: Hotel, manufacturing: Factory, electrical: Zap, warehouse: Warehouse,
+  construction: HardHat, welding: Wrench, logistics: Warehouse, automotive: Wrench,
+  maintenance: Wrench, engineering: Factory, healthcare: Users, caregiving: Users,
+  agriculture: Globe, cleaning: Building2, "food production": Factory,
+};
 
 const articles = [
   {
@@ -136,7 +67,7 @@ export default function PremiumHome({ content }: { content: PublicContent }) {
   const [countryFilter, setCountryFilter] = useState("Semua negara");
   const [categoryFilter, setCategoryFilter] = useState("Semua bidang");
   const [selectedPosition, setSelectedPosition] = useState("");
-  const [targetCountry, setTargetCountry] = useState("Poland");
+  const [targetCountry, setTargetCountry] = useState("");
   const [cvName, setCvName] = useState("");
   const [formMessage, setFormMessage] = useState("");
   const [videoNotice, setVideoNotice] = useState("");
@@ -149,15 +80,33 @@ export default function PremiumHome({ content }: { content: PublicContent }) {
     ? ""
     : content.site.contact_address;
 
+  const jobItems = content.jobs;
+  const workAreas = useMemo(() => {
+    const categories = Array.from(new Set(jobItems.map((job) => job.category.trim()).filter(Boolean)));
+    return categories.map((name, index) => ({
+      name,
+      detail: "Lowongan terbit pada bidang " + name + ".",
+      icon: areaIconByName[name.toLowerCase()] ?? Briefcase,
+      number: String(index + 1).padStart(2, "0"),
+    }));
+  }, [jobItems]);
+  const countries = useMemo(() => {
+    const names = Array.from(new Set(jobItems.map((job) => job.country.trim()).filter(Boolean)));
+    return names.map((name) => ({
+      name,
+      flag: countryFlagByName[name.toLowerCase()] ?? "🌍",
+      note: content.source === "demo" ? "Contoh negara tujuan" : jobItems.filter((job) => job.country === name).length + " lowongan terbit",
+    }));
+  }, [jobItems, content.source]);
   const filteredJobs = useMemo(() => {
     const query = searchTerm.trim().toLowerCase();
-    return jobSamples.filter((job) => {
+    return jobItems.filter((job) => {
       const matchesQuery = !query || [job.title, job.country, job.category, job.summary].some((value) => value.toLowerCase().includes(query));
       const matchesCountry = countryFilter === "Semua negara" || job.country === countryFilter;
       const matchesCategory = categoryFilter === "Semua bidang" || job.category === categoryFilter;
       return matchesQuery && matchesCountry && matchesCategory;
     });
-  }, [searchTerm, countryFilter, categoryFilter]);
+  }, [jobItems, searchTerm, countryFilter, categoryFilter]);
 
   useEffect(() => {
     const track = galleryTrackRef.current;
@@ -309,7 +258,7 @@ export default function PremiumHome({ content }: { content: PublicContent }) {
     return () => context.revert();
   }, []);
 
-  function chooseJob(job: JobSample) {
+  function chooseJob(job: JobListing) {
     setSelectedPosition(job.title);
     setTargetCountry(job.country);
     document.getElementById("daftar")?.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -380,9 +329,9 @@ export default function PremiumHome({ content }: { content: PublicContent }) {
           </div>
           <div className="hero-side reveal">
             <div className="hero-side__label"><span className="hero-side__dot" /> YOUR NEXT CHAPTER</div>
-            <div className="hero-side__number">01<span>/</span>06</div>
+            <div className="hero-side__number">01<span>/</span>{String(workAreas.length).padStart(2, "0")}</div>
             <div className="hero-side__rule" />
-            <p>Enam bidang kerja untuk membantu Anda menemukan jalur yang sesuai dengan keterampilan dan pengalaman.</p>
+            <p>{workAreas.length ? workAreas.length + " bidang kerja mengikuti kategori lowongan yang diterbitkan." : "Bidang kerja akan ditampilkan setelah lowongan resmi diterbitkan."}</p>
             <a href="#bidang" aria-label="Lihat bidang kerja">Lihat bidang kerja <ArrowUpRight size={17} /></a>
           </div>
           <a className="hero-scroll" href="#tentang" aria-label="Gulir ke bagian tentang"><ArrowDown size={17} /></a>
@@ -393,7 +342,9 @@ export default function PremiumHome({ content }: { content: PublicContent }) {
         <div className="sector-ticker__label"><span className="ticker-dot" /> BIDANG KERJA</div>
         <div className="sector-ticker__viewport" tabIndex={0} aria-label="Daftar bidang pekerjaan; dapat digulir dengan keyboard"><div className="sector-ticker__track">
           {Array.from({ length: 2 }).map((_, index) => (
-            <span className="sector-ticker__set" key={index} aria-hidden={index === 1}>HOSPITALITY <b>✳</b> MANUFACTURING <b>✳</b> ELECTRICAL <b>✳</b> WAREHOUSE <b>✳</b> CONSTRUCTION <b>✳</b> WELDING <b>✳</b></span>
+            <span className="sector-ticker__set" key={index} aria-hidden={index === 1}>
+              {workAreas.length ? workAreas.map((area) => <span key={area.name}>{area.name.toUpperCase()} <b>✳</b> </span>) : <span>LOWONGAN RESMI MENYUSUL <b>✳</b></span>}
+            </span>
           ))}
         </div></div>
         <span className="sector-ticker__hint">EXPLORE YOUR SKILLS</span>
@@ -438,10 +389,10 @@ export default function PremiumHome({ content }: { content: PublicContent }) {
           <div className="section-kicker reveal"><span>02</span><span className="section-kicker__line" /> BIDANG PEKERJAAN <span className="section-kicker__right">SKILLS MEET OPPORTUNITY</span></div>
           <div className="section-heading-row">
             <h2 className="display-title reveal">KETERAMPILAN<br /><span>PUNYA ARAH.</span></h2>
-            <p className="section-intro reveal">Jelajahi bidang yang relevan dengan pengalaman dan keterampilan Anda. Daftar ini adalah kategori awal untuk desain dan dapat disesuaikan dengan kebutuhan resmi perusahaan.</p>
+            <p className="section-intro reveal">Kategori bidang mengikuti lowongan yang diterbitkan melalui CMS. Posisi dan negara baru akan muncul setelah data resmi dimasukkan dan dipublikasikan.</p>
           </div>
           <div className="work-grid">
-            {workAreas.map((area) => {
+            {workAreas.length ? workAreas.map((area) => {
               const Icon = area.icon;
               return (
                 <a className="work-card reveal" href="#peluang" key={area.name} onClick={() => setCategoryFilter(area.name)}>
@@ -452,7 +403,7 @@ export default function PremiumHome({ content }: { content: PublicContent }) {
                   <span className="work-card__link">Lihat posisi <ArrowRight size={15} /></span>
                 </a>
               );
-            })}
+            }) : <div className="empty-results reveal" style={{ gridColumn: "1 / -1" }}><Briefcase size={24} /><h3>Belum ada bidang kerja terbit</h3><p>Bidang akan muncul otomatis ketika perusahaan menerbitkan lowongan melalui CMS.</p></div>}
           </div>
         </div>
       </section>
@@ -461,8 +412,8 @@ export default function PremiumHome({ content }: { content: PublicContent }) {
         <div className="container">
           <div className="section-kicker reveal"><span>03</span><span className="section-kicker__line" /> JELAJAHI POSISI <span className="section-kicker__right">FIND YOUR NEXT STEP</span></div>
           <div className="section-heading-row jobs-heading">
-            <div><h2 className="display-title reveal">CARI PELUANG<br /><span>ANDA.</span></h2><p className="jobs-disclaimer reveal"><BadgeCheck size={17} /> Contoh data untuk pratinjau. Ini bukan daftar lowongan aktif.</p></div>
-            <p className="section-intro reveal">Cari berdasarkan kata kunci, negara, atau bidang pekerjaan. Daftar ini nantinya akan terhubung dengan data posisi yang telah disetujui perusahaan.</p>
+            <div><h2 className="display-title reveal">CARI PELUANG<br /><span>ANDA.</span></h2><p className="jobs-disclaimer reveal"><BadgeCheck size={17} /> {content.source === "demo" ? "Contoh data pratinjau; ini bukan daftar lowongan aktif." : jobItems.length ? "Lowongan yang tampil berasal dari CMS dan berstatus publik." : "Belum ada lowongan resmi yang dipublikasikan."}</p></div>
+            <p className="section-intro reveal">Cari lowongan berdasarkan kata kunci, negara, atau bidang. Data di bagian ini mengikuti daftar yang diterbitkan oleh admin perusahaan.</p>
           </div>
           <div className="job-search reveal">
             <label className="job-search__keyword"><Search size={20} /><span className="sr-only">Cari posisi</span><input value={searchTerm} onChange={(event) => setSearchTerm(event.target.value)} placeholder="Cari posisi, keterampilan, atau negara..." /></label>
@@ -470,12 +421,12 @@ export default function PremiumHome({ content }: { content: PublicContent }) {
             <label className="job-search__select"><Briefcase size={18} /><span className="sr-only">Filter bidang</span><select value={categoryFilter} onChange={(event) => setCategoryFilter(event.target.value)}><option>Semua bidang</option>{workAreas.map((area) => <option key={area.name}>{area.name}</option>)}</select><ChevronDown size={15} /></label>
             <button className="button button--navy job-search__button" type="button" onClick={() => document.getElementById("daftar")?.scrollIntoView({ behavior: "smooth" })}>Daftar minat <ArrowUpRight size={17} /></button>
           </div>
-          <div className="job-results-meta"><span>{filteredJobs.length} contoh posisi</span><span>DATA ILUSTRASI · PERLU KONFIRMASI</span></div>
+          <div className="job-results-meta"><span>{filteredJobs.length} {content.source === "demo" ? "contoh posisi" : "lowongan terbit"}</span><span>{content.source === "demo" ? "DATA ILUSTRASI · PERLU KONFIRMASI" : "DATA CMS · STATUS PUBLIK"}</span></div>
           {filteredJobs.length > 0 ? (
             <div className="jobs-grid">
               {filteredJobs.map((job, index) => (
                 <article className="job-card reveal" key={job.id}>
-                  <div className="job-card__image"><SafeMediaImage src={job.image} alt={"Ilustrasi bidang " + job.category} /><span className="job-card__flag">{job.flag} {job.country}</span><span className="job-card__sample">CONTOH</span></div>
+                  <div className="job-card__image"><SafeMediaImage src={job.image_url} alt={"Foto lowongan " + job.title} /><span className="job-card__flag">{countryFlagByName[job.country.toLowerCase()] ?? "🌍"} {job.country}</span><span className="job-card__sample">{content.source === "demo" ? "CONTOH" : "TERBIT"}</span></div>
                   <div className="job-card__body">
                     <span className="job-card__category">{job.category.toUpperCase()} <span>·</span> POSISI {String(index + 1).padStart(2, "0")}</span>
                     <h3>{job.title}</h3>
@@ -486,7 +437,7 @@ export default function PremiumHome({ content }: { content: PublicContent }) {
               ))}
             </div>
           ) : (
-            <div className="empty-results"><Search size={26} /><h3>Belum ada contoh yang cocok</h3><p>Coba kata kunci atau filter lain untuk melihat contoh posisi.</p><button type="button" className="text-link" onClick={() => { setSearchTerm(""); setCountryFilter("Semua negara"); setCategoryFilter("Semua bidang"); }}>Reset pencarian <ArrowRight size={16} /></button></div>
+            <div className="empty-results"><Search size={26} /><h3>{jobItems.length === 0 && content.source === "gas" ? "Belum ada lowongan resmi" : "Tidak ada lowongan yang cocok"}</h3><p>{jobItems.length === 0 && content.source === "gas" ? "Tim Sinergi Global belum menerbitkan posisi melalui CMS. Silakan kembali untuk melihat pembaruan." : "Coba kata kunci atau filter lain untuk melihat posisi yang tersedia pada daftar ini."}</p>{jobItems.length > 0 && <button type="button" className="text-link" onClick={() => { setSearchTerm(""); setCountryFilter("Semua negara"); setCategoryFilter("Semua bidang"); }}>Reset pencarian <ArrowRight size={16} /></button>}</div>
           )}
         </div>
       </section>
@@ -496,15 +447,15 @@ export default function PremiumHome({ content }: { content: PublicContent }) {
           <div className="countries-copy">
             <div className="section-kicker section-kicker--light reveal"><span>04</span><span className="section-kicker__line" /> NEGARA TUJUAN</div>
             <h2 className="display-title reveal">LANGKAH ANDA.<br /><span>CAKRAWALA BARU.</span></h2>
-            <p className="reveal">Negara di bawah ini merupakan contoh untuk rancangan pencarian. Tujuan, kuota, persyaratan, dan posisi yang benar-benar tersedia harus dikonfirmasi sebelum publikasi.</p>
-            <a className="button button--lime reveal" href="#peluang">Lihat contoh posisi <ArrowRight size={17} /></a>
+            <p className="reveal">{content.source === "demo" ? "Negara di bawah ini merupakan contoh untuk rancangan pencarian. Tujuan, kuota, persyaratan, dan posisi yang benar-benar tersedia harus dikonfirmasi sebelum publikasi." : "Negara yang tampil mengikuti lowongan terbit di CMS. Kuota, persyaratan, dan ketersediaan posisi tetap perlu dikonfirmasi melalui kanal resmi."}</p>
+            <a className="button button--lime reveal" href="#peluang">{content.source === "demo" ? "Lihat contoh posisi" : "Lihat lowongan"} <ArrowRight size={17} /></a>
           </div>
           <div className="country-list">
-            {countries.map((country, index) => (
+            {countries.length ? countries.map((country, index) => (
               <button className="country-row reveal" type="button" key={country.name} onClick={() => { setCountryFilter(country.name); document.getElementById("peluang")?.scrollIntoView({ behavior: "smooth" }); }}>
-                <span className="country-row__index">0{index + 1}</span><span className="country-row__flag" aria-hidden="true">{country.flag}</span><span className="country-row__name">{country.name}<small>{country.note}</small></span><ArrowUpRight size={19} />
+                <span className="country-row__index">{String(index + 1).padStart(2, "0")}</span><span className="country-row__flag" aria-hidden="true">{country.flag}</span><span className="country-row__name">{country.name}<small>{country.note}</small></span><ArrowUpRight size={19} />
               </button>
-            ))}
+            )) : <p className="country-empty">Negara tujuan akan ditampilkan setelah perusahaan menerbitkan lowongan resmi.</p>}
           </div>
         </div>
       </section>
@@ -621,8 +572,8 @@ export default function PremiumHome({ content }: { content: PublicContent }) {
               <div className="form-field"><label htmlFor="candidate-email">Email</label><input id="candidate-email" name="email" type="email" autoComplete="email" disabled placeholder="Pendaftaran belum dibuka" /></div>
             </div>
             <div className="form-row">
-              <div className="form-field"><label htmlFor="candidate-country">Negara tujuan</label><select id="candidate-country" name="country" value={targetCountry} onChange={(event) => setTargetCountry(event.target.value)} required disabled>{countries.map((country) => <option key={country.name} value={country.name}>{country.flag} {country.name}</option>)}</select></div>
-              <div className="form-field"><label htmlFor="candidate-position">Bidang / posisi</label><select id="candidate-position" name="position" value={selectedPosition} onChange={(event) => setSelectedPosition(event.target.value)} required disabled><option value="">Pilih contoh posisi</option>{jobSamples.map((job) => <option key={job.id} value={job.title}>{job.title}</option>)}</select></div>
+              <div className="form-field"><label htmlFor="candidate-country">Negara tujuan</label><select id="candidate-country" name="country" value={targetCountry} onChange={(event) => setTargetCountry(event.target.value)} required disabled><option value="">Pilih negara</option>{countries.map((country) => <option key={country.name} value={country.name}>{country.flag} {country.name}</option>)}</select></div>
+              <div className="form-field"><label htmlFor="candidate-position">Bidang / posisi</label><select id="candidate-position" name="position" value={selectedPosition} onChange={(event) => setSelectedPosition(event.target.value)} required disabled><option value="">Pilih contoh posisi</option>{jobItems.map((job) => <option key={job.id} value={job.title}>{job.title}</option>)}</select></div>
             </div>
             <div className="form-field"><label htmlFor="candidate-cv">Unggah CV <span>PDF / DOC / DOCX · Maks. 5 MB</span></label><label className="file-drop" htmlFor="candidate-cv"><UploadCloud size={23} /><strong>{cvName || "Pilih file CV Anda"}</strong><small>Unggah CV belum tersedia</small><input id="candidate-cv" name="cv" type="file" disabled accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document" required onChange={(event) => { const file = event.currentTarget.files?.[0]; if (!file) { setCvName(""); return; } if (file.size > 5 * 1024 * 1024) { setFormMessage("Ukuran file melebihi 5 MB. Pilih CV yang lebih kecil."); event.currentTarget.value = ""; setCvName(""); return; } setCvName(file.name); setFormMessage(""); }} /></label></div>
             <label className="consent-check"><input type="checkbox" required disabled /><span>Pemberitahuan privasi resmi belum disetujui; formulir belum dapat digunakan.</span></label>
@@ -650,7 +601,7 @@ export default function PremiumHome({ content }: { content: PublicContent }) {
           <div className="footer-main">
             <a className="sg-brand sg-brand--footer" href="#top"><span className="sg-brand__mark">SG<span>.</span></span><span className="sg-brand__name">SINERGI GLOBAL<small>CAREER OPPORTUNITIES</small></span></a>
             <p>Menghubungkan keterampilan, persiapan, dan informasi peluang karier internasional dengan lebih terarah.</p>
-            <div className="footer-links"><span>JELAJAHI</span><a href="#bidang">Bidang kerja</a><a href="#peluang">Contoh posisi</a><a href="#proses">Alur proses</a><a href="#galeri">Galeri aktivitas</a><a href="#berita">Berita & panduan</a></div>
+            <div className="footer-links"><span>JELAJAHI</span><a href="#bidang">Bidang kerja</a><a href="#peluang">Peluang kerja</a><a href="#proses">Alur proses</a><a href="#galeri">Galeri aktivitas</a><a href="#berita">Berita & panduan</a></div>
             <div className="footer-social"><span>MEDIA SOSIAL</span><div><span aria-label="Instagram, tautan resmi menyusul"><Instagram size={18} /></span><span aria-label="LinkedIn, tautan resmi menyusul"><Linkedin size={18} /></span><span aria-label="Informasi grup perusahaan"><Building2 size={18} /></span></div><small>Tautan resmi menyusul</small></div>
           </div>
           <div className="footer-group-note">PT SINERGI CORPORA GROUP · JAVA INDO CORPORA <span>Logo dan hubungan grup perlu disesuaikan dengan aset resmi.</span></div>
