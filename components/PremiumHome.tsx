@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import type { JobListing, PublicContent } from "@/lib/content";
 import SafeMediaImage from "@/components/media/SafeMediaImage";
+import WalkingApplicant from "@/components/WalkingApplicant";
 
 const countryFlagByName: Record<string, string> = {
   poland: "🇵🇱", germany: "🇩🇪", netherlands: "🇳🇱", "czech republic": "🇨🇿",
@@ -440,6 +441,7 @@ export default function PremiumHome({ content }: { content: PublicContent }) {
           ) : (
             <div className="empty-results"><Search size={26} /><h3>{jobItems.length === 0 && content.source === "gas" ? "Belum ada lowongan resmi" : "Tidak ada lowongan yang cocok"}</h3><p>{jobItems.length === 0 && content.source === "gas" ? "Tim Sinergi Global belum menerbitkan posisi melalui CMS. Silakan kembali untuk melihat pembaruan." : "Coba kata kunci atau filter lain untuk melihat posisi yang tersedia pada daftar ini."}</p>{jobItems.length > 0 && <button type="button" className="text-link" onClick={() => { setSearchTerm(""); setCountryFilter("Semua negara"); setCategoryFilter("Semua bidang"); }}>Reset pencarian <ArrowRight size={16} /></button>}</div>
           )}
+          <WalkingApplicant />
         </div>
       </section>
 

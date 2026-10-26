@@ -24,6 +24,12 @@
 9. Kebijakan privasi dan persetujuan kandidat sebelum formulir atau upload CV diaktifkan.
 10. Akses domain, hosting, Google Workspace/Drive, spreadsheet, GAS, OAuth, dan akun layanan yang dikelola perusahaan.
 
+## Animasi karakter pelamar
+
+- Prototipe dekoratif SVG/CSS ditempatkan di bawah daftar lowongan: karakter pria dan wanita bergantian, berjalan dari kiri ke kanan, berhenti sejenak, lalu menoleh ke dua arah sebelum melanjutkan.
+- Prototipe ini bukan model manusia 3D penuh. Untuk hasil semi-realistis seperti film, siapkan aset model 3D beranimasi atau video WebM transparan berlisensi; aset dapat menggantikan ilustrasi tanpa mengubah alur CMS.
+- Animasi bersifat dekoratif, tidak menutupi tombol/formulir, dan disembunyikan ketika pengunjung memilih reduced motion.
+
 ## Aturan keamanan konten
 
 - Setup GAS baru menggunakan nilai kosong dan tidak mempublikasikan foto stok sebagai kegiatan resmi.
