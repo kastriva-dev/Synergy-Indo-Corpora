@@ -23,7 +23,7 @@ export type GalleryItem = {
 
 export type SiteContent = { hero_eyebrow: string; hero_title_1: string; hero_title_2: string; hero_title_accent: string; hero_description: string; about_description: string; contact_whatsapp: string; contact_email: string; contact_address: string };
 
-export type PublicContent = { site: SiteContent; programs: Program[]; gallery: GalleryItem[]; source: "demo" | "firebase" };
+export type PublicContent = { site: SiteContent; programs: Program[]; gallery: GalleryItem[]; source: "demo" | "gas" | "firebase" };
 
 // Placeholder demo: kategori, foto, dan narasi di bawah bukan lowongan atau dokumentasi resmi perusahaan.
 export const fallbackContent: PublicContent = {
@@ -74,7 +74,58 @@ function coerceItems<T extends Program | GalleryItem>(items: unknown, fallbacks:
   } as T)).sort((a, b) => a.order - b.order);
 }
 
+function containsLegacyBrandContent(value: unknown): boolean {
+  const serialized = (JSON.stringify(value) || "").toLowerCase();
+  return /synergy indo corpora|lembaga pelatihan kerja|\\blpk\\b/.test(serialized);
+}
+
 export async function getPublicContent(): Promise<PublicContent> {
+  // Meeting preview only: GAS is a read-only CMS source and takes precedence while configured.
+  const gasUrl = process.env.GAS_WEB_APP_URL?.trim();
+  if (gasUrl) {
+    try {
+      const target = new URL(gasUrl);
+      if (target.protocol !== "https:" || target.hostname !== "script.google.com" || !target.pathname.endsWith("/exec")) {
+        throw new Error("GAS_WEB_APP_URL harus berupa URL Google Apps Script HTTPS yang berakhiran /exec");
+      }
+      target.searchParams.set("resource", "public");
+      const response = await fetch(target.toString(), {
+        next: { revalidate: 300 },
+        signal: AbortSignal.timeout(8000),
+      });
+      if (!response.ok) throw new Error(`GAS HTTP ${response.status}`);
+      const body: unknown = await response.json();
+      if (!body || typeof body !== "object") throw new Error("Respons GAS tidak valid");
+      const envelope = body as { ok?: unknown; data?: unknown };
+      if (envelope.ok !== true || !envelope.data || typeof envelope.data !== "object") {
+        throw new Error("Format respons GAS tidak valid");
+      }
+      const raw = envelope.data as Record<string, unknown>;
+
+      // Never show old LPK/Synergy Indo Corpora content under the new Sinergi Global brand.
+      if (containsLegacyBrandContent(raw)) {
+        console.warn("Sinergi Global: GAS masih berisi konten merek lama; memakai konten pratinjau yang aman.");
+        return fallbackContent;
+      }
+
+      const siteRaw = raw.site && typeof raw.site === "object" ? raw.site as Record<string, unknown> : {};
+      const site = Object.fromEntries(
+        Object.entries(fallbackContent.site).map(([key, value]) => [key, safeString(siteRaw[key], value)])
+      ) as SiteContent;
+      return {
+        source: "gas",
+        site,
+        programs: coerceItems(raw.programs, fallbackContent.programs),
+        gallery: coerceItems(raw.gallery, fallbackContent.gallery),
+      };
+    } catch (error) {
+      console.warn("Sinergi Global: GAS tidak tersedia; memakai konten pratinjau aman:",
+        error instanceof Error ? error.message : "unknown error");
+      return fallbackContent;
+    }
+  }
+
+  // Firebase remains the target CMS after the client-owned project is ready.
   if (!isFirebaseConfigured()) return fallbackContent;
   try {
     const raw = await readCmsSnapshot(false);
