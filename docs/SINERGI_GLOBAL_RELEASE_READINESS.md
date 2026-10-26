@@ -14,8 +14,9 @@
 ## 2. Batasan yang masih aktif
 
 - Metadata website masih `noindex, nofollow`.
-- Homepage memiliki lowongan, kategori bidang, negara tujuan, artikel/panduan, dan alur proses berbasis data contoh/hard-coded. Lowongan belum berasal dari CMS.
-- Admin CMS saat ini mengelola profil, program/materi, dan galeri; belum ada tab untuk mengelola lowongan.
+- CMS lowongan dinamis kini sudah ditambahkan pada source Next.js dan GAS: admin dapat membuat/mengedit posisi, menyimpan draft atau menerbitkan, serta mengunggah foto melalui folder Drive media yang sama.
+- Website mengambil lowongan terbit beserta kategori dan negara dari endpoint publik. Jika CMS terhubung tetapi belum ada posisi terbit, halaman menampilkan empty state, bukan data contoh. Data contoh hanya dipakai pada mode pratinjau/demo.
+- Fitur tersebut belum operasional sampai source GAS publik/admin disalin dan dideploy, tab jobs dibuat melalui setup, dan alur end-to-end diuji. Formulir minat kandidat dan unggah CV tetap nonaktif.
 - Formulir minat kandidat dan unggah CV belum aktif. Jangan mengaktifkannya dengan hanya menambahkan form di frontend.
 - Materi legal, identitas, foto kegiatan, dan detail posisi final masih perlu disetujui perusahaan.
 - Koneksi Vercel ke domain tim tidak tersedia untuk inspeksi browser otomatis pada sesi ini. Status build bukan pengganti UAT visual manual.
@@ -24,7 +25,7 @@
 
 ## 3. Perhatian khusus untuk setup Google Sheets/GAS baru
 
-- Source `gas/Code.gs` sebelumnya memiliki seed contoh LPK/Synergy Indo Corpora dan foto Unsplash berstatus published. Versi repository yang sedang disiapkan di branch perbaikan mengubah default menjadi kosong agar data contoh tidak terbit otomatis.
+- Source gas/Code.gs pada main memakai nilai kosong untuk tab baru, tidak menerbitkan foto stok sebagai kegiatan resmi, dan membuat tab jobs kosong jika belum ada. Fungsi setup hanya membuat tab yang belum ada; tab existing tidak ditimpa.
 - Fungsi setup hanya membuat tab yang belum ada; ia tidak menghapus atau mengganti sheet yang sudah ada. Karena itu, audit konten pada spreadsheet yang sudah digunakan secara terpisah sebelum deployment GAS baru.
 - Endpoint publik hanya boleh mengeluarkan kolom konten yang memang disetujui untuk publik. Tab pendaftaran, rahasia, dan data kandidat tidak boleh dikirim dari API tersebut.
 - Folder media Drive bukan tempat untuk CV. File foto CMS yang dibagikan melalui tautan publik harus hanya berisi aset yang memang boleh dilihat publik.
@@ -52,8 +53,8 @@
 
 ## 6. Gate lowongan dan pendaftaran
 
-- [ ] Tambahkan skema dan editor CMS lowongan; hanya posisi terbit yang boleh tampil di homepage.
-- [ ] Pastikan halaman lowongan kosong menampilkan empty state yang jelas, bukan daftar contoh seolah aktif.
+- [ ] Salin dan deploy versi terbaru gas/Code.gs dan gas/AdminCode.gs; jalankan setupSynergySpreadsheet() untuk membuat tab jobs bila belum ada.
+- [ ] Uji CMS lowongan end-to-end: buat draft, pastikan tidak tampil publik, terbitkan, edit, batalkan publikasi, dan pastikan halaman kosong tidak menampilkan contoh sebagai lowongan aktif.
 - [ ] Jika perusahaan menginginkan form minat/unggah CV, bangun backend privat milik perusahaan, validasi file, anti-spam, pembatasan akses, notifikasi, retensi/penghapusan, dan audit.
 - [ ] Tetapkan siapa yang dapat membaca CV, berapa lama disimpan, bagaimana kandidat meminta penghapusan, serta bagaimana backup dienkripsi/dibatasi.
 - [ ] Uji end-to-end dengan data dummy sebelum memakai data asli.

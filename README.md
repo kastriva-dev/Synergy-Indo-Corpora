@@ -7,12 +7,12 @@ Website Next.js dengan tampilan premium, animasi interaktif, CMS konten berbasis
 ## Status saat ini
 
 - Frontend premium: hero sinematik, custom cursor desktop, kartu 3D, ticker yang berhenti saat pointer mendekat, galeri horizontal, scroll reveal, dan dukungan `prefers-reduced-motion`.
-- Integrasi konten publik GAS: **read-only** untuk profil, program/materi, dan galeri.
-- Admin CMS: kode login Google, pengelolaan profil/materi/galeri, dan upload foto ke folder Google Drive khusus tersedia di repository; konfigurasi akun milik perusahaan serta security QA end-to-end masih menjadi syarat sebelum operasional.
-- Lowongan, kategori bidang, negara tujuan, berita, dan alur proses pada homepage masih berisi **contoh desain**. Lowongan belum dikelola melalui CMS.
+- Integrasi konten publik GAS: **read-only** untuk profil, program/materi, galeri, dan lowongan terbit.
+- Admin CMS: kode login Google, pengelolaan profil, lowongan (draft/publikasi), program/materi, galeri, dan upload foto ke folder Google Drive khusus tersedia di repository; deployment GAS serta security QA end-to-end masih menjadi syarat sebelum operasional.
+- Lowongan, kategori bidang, dan negara tujuan mengikuti CMS saat source GAS terbaru sudah dideploy. Pada mode demo, contoh posisi tetap diberi label contoh; pada CMS terhubung tanpa lowongan terbit, website menampilkan empty state. Berita dan alur proses masih berupa konten contoh/desain.
 - Formulir minat kandidat dan unggah CV belum aktif. Jangan mengumpulkan data pribadi kandidat pada tahap pratinjau.
 - Metadata masih memakai `noindex, nofollow` sampai konten, legalitas, domain, privasi, dan persetujuan perusahaan diverifikasi.
-- Konten demo dan gambar stok tidak boleh dianggap sebagai lowongan, kegiatan, atau klaim resmi perusahaan.
+- Konten demo dan gambar stok tidak boleh dianggap sebagai lowongan, kegiatan, atau klaim resmi perusahaan. Perubahan source di GitHub tidak otomatis mengubah deployment GAS; ikuti instruksi pada gas/README_GAS.md.
 
 ## Menjalankan secara lokal (Windows)
 

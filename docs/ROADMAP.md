@@ -7,7 +7,7 @@
 | 1 · Frontend premium | Kode utama selesai; UAT visual manual masih perlu dilakukan | Desktop/mobile diuji, navigasi keyboard dan reduced motion lolos |
 | 2 · CMS konten publik GAS | Endpoint read-only tersedia; konten resmi dan kepemilikan akun perlu diverifikasi | Hanya konten terbit yang keluar dari API publik; tidak ada data admin/kandidat |
 | 3 · Admin CMS dan media | Kode login Google, editor konten, upload Drive, rate limit/nonce tersedia di repository; konfigurasi dan pengujian end-to-end masih diperlukan | Login allowlist, API admin, upload, fail-closed, audit, backup/restore, dan security QA lulus |
-| 4 · CMS lowongan dinamis | Belum dibuat | Lowongan, kategori, dan negara berasal dari data terverifikasi dan bisa dikelola admin; draft tidak tampil publik |
+| 4 · CMS lowongan dinamis | Kode Next.js + GAS tersedia di branch pengembangan; deployment GAS dan UAT end-to-end masih perlu | Lowongan, kategori, dan negara berasal dari data terverifikasi dan bisa dikelola admin; draft tidak tampil publik dan halaman kosong tidak memakai data contoh |
 | 5 · Minat kandidat dan CV | Sengaja nonaktif/belum siap | Backend privat milik perusahaan, validasi upload, anti-spam, privasi, retensi, akses, notifikasi, dan uji keamanan lulus |
 | 6 · Peluncuran publik | Belum disetujui | Materi resmi, domain/hosting, SEO, UAT, monitoring, backup, dan rollback disetujui |
 
@@ -36,7 +36,7 @@
 ## Urutan kerja berikutnya
 
 1. Selesaikan audit visual desktop/mobile dan dapatkan persetujuan desain.
-2. Bangun CMS lowongan dinamis agar posisi/negara/bidang tidak lagi menjadi data hard-coded.
+2. Deploy source GAS publik/admin yang baru, jalankan setup untuk menambahkan tab jobs, lalu uji draft, publikasi, pembaruan, dan empty state CMS lowongan.
 3. Verifikasi konfigurasi admin pada environment staging terpisah, termasuk Upstash, OAuth, GAS admin, Drive, dan backup/restore.
 4. Masukkan materi resmi dan lakukan UAT bersama klien.
 5. Bangun/aktifkan backend kandidat dan upload CV hanya setelah persetujuan privasi serta kontrol keamanan siap.
