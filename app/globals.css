@@ -148,6 +148,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .work-card__top { display: flex; align-items: center; justify-content: space-between; color: #8c9b9f; font-size: 9px; font-weight: 800; letter-spacing: .1em; }
 .work-card__top svg { color: var(--sg-teal); }
 .work-card__icon { display: grid; place-items: center; width: 49px; height: 49px; margin-top: 23px; border-radius: 7px; background: #eaf4e9; color: var(--sg-teal); }
+.work-card__icon-image { display: block; width: 100%; height: 100%; border-radius: inherit; object-fit: cover; }
 .work-card h3 { margin: 18px 0 7px; font-family: 'Manrope', sans-serif; font-size: 19px; letter-spacing: -.04em; }
 .work-card p { max-width: 260px; margin: 0 0 22px; color: var(--sg-muted); font-size: 12px; line-height: 1.7; }
 .work-card__link { display: inline-flex; align-items: center; gap: 9px; margin-top: auto; color: var(--sg-teal); font-size: 10px; font-weight: 800; }

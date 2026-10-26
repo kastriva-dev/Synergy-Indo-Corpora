@@ -25,30 +25,32 @@ export type SiteContent = { hero_eyebrow: string; hero_title_1: string; hero_tit
 
 export type PublicContent = { site: SiteContent; programs: Program[]; gallery: GalleryItem[]; source: "demo" | "firebase" };
 
-// Placeholder demo: bukan klaim faktual tentang program, kerja sama, hasil, atau izin LPK.
+// Placeholder demo: kategori, foto, dan narasi di bawah bukan lowongan atau dokumentasi resmi perusahaan.
 export const fallbackContent: PublicContent = {
   source: "demo",
   site: {
-    hero_eyebrow: "SINERGI GLOBAL  /  INTERNATIONAL CAREER",
-    hero_title_1: "TALENT FOR",
-    hero_title_2: "A CONNECTED",
-    hero_title_accent: "WORLD.",
-    hero_description: "Menghubungkan kompetensi, kesempatan, dan perjalanan karier internasional melalui informasi yang jelas dan proses yang bertanggung jawab.",
+    hero_eyebrow: "MEMBUKA PELUANG KARIER INTERNASIONAL",
+    hero_title_1: "KETERAMPILAN",
+    hero_title_2: "ANDA, PELUANG",
+    hero_title_accent: "DUNIA.",
+    hero_description: "Temukan arah karier global dengan informasi yang jelas, persiapan yang terarah, dan pendampingan sesuai proses resmi perusahaan.",
     about_description: "Sinergi Global berfokus pada kualitas kandidat dan kesiapan tenaga kerja untuk peluang internasional. Profil resmi, cakupan layanan, serta legalitas akan dikonfirmasi perusahaan.",
     contact_whatsapp: "",
     contact_email: "",
     contact_address: "Alamat resmi perusahaan akan diperbarui",
   },
   programs: [
-    { id: "program-01", title: "Kesiapan Karier Internasional", category: "PENGEMBANGAN", description: "Ruang pembelajaran terstruktur untuk membangun kemampuan praktis sesuai kebutuhan peserta.", duration: "Detail menyusul", image_url: "https://images.unsplash.com/photo-1531482615713-2afd69097998?auto=format&fit=crop&w=1050&q=80", published: true, order: 1 },
-    { id: "program-02", title: "Pengembangan Kompetensi", category: "KESIAPAN KARIER", description: "Mendorong kesiapan peserta melalui pembelajaran, pembiasaan, dan pendekatan profesional.", duration: "Detail menyusul", image_url: "https://images.unsplash.com/photo-1556761175-b413da4baf72?auto=format&fit=crop&w=1050&q=80", published: true, order: 2 },
-    { id: "program-03", title: "Orientasi Kerja Global", category: "PEMBELAJARAN", description: "Mengembangkan kualitas individu melalui proses belajar yang terarah dan berkelanjutan.", duration: "Detail menyusul", image_url: "https://images.unsplash.com/photo-1581092160562-40aa08e78837?auto=format&fit=crop&w=1050&q=80", published: true, order: 3 },
-    { id: "program-04", title: "Persiapan Kandidat", category: "KARIER", description: "Pendekatan pembelajaran yang menempatkan keterampilan dan kesiapan kerja sebagai prioritas.", duration: "Detail menyusul", image_url: "https://images.unsplash.com/photo-1504917595217-d4dc5ebe6122?auto=format&fit=crop&w=1050&q=80", published: true, order: 4 },
+    { id: "program-hospitality", title: "Hospitality", category: "Hospitality", description: "Hotel, layanan, dan operasional hospitality. Detail peluang mengikuti lowongan resmi yang dipublikasikan.", duration: "Informasi posisi menyusul", image_url: "https://images.unsplash.com/photo-1556761175-b413da4baf72?auto=format&fit=crop&w=1050&q=80", published: true, order: 1 },
+    { id: "program-manufacturing", title: "Manufacturing", category: "Manufacturing", description: "Produksi, perakitan, dan proses manufaktur. Detail peluang mengikuti lowongan resmi yang dipublikasikan.", duration: "Informasi posisi menyusul", image_url: "https://images.unsplash.com/photo-1581092160562-40aa08e78837?auto=format&fit=crop&w=1050&q=80", published: true, order: 2 },
+    { id: "program-electrical", title: "Electrical", category: "Electrical", description: "Instalasi dan pekerjaan teknis kelistrikan. Detail peluang mengikuti lowongan resmi yang dipublikasikan.", duration: "Informasi posisi menyusul", image_url: "https://images.unsplash.com/photo-1504917595217-d4dc5ebe6122?auto=format&fit=crop&w=1050&q=80", published: true, order: 3 },
+    { id: "program-warehouse", title: "Warehouse", category: "Warehouse", description: "Gudang, distribusi, dan dukungan logistik. Detail peluang mengikuti lowongan resmi yang dipublikasikan.", duration: "Informasi posisi menyusul", image_url: "https://images.unsplash.com/photo-1531482615713-2afd69097998?auto=format&fit=crop&w=1050&q=80", published: true, order: 4 },
+    { id: "program-construction", title: "Construction", category: "Construction", description: "Pekerjaan lapangan dan dukungan konstruksi. Detail peluang mengikuti lowongan resmi yang dipublikasikan.", duration: "Informasi posisi menyusul", image_url: "https://images.unsplash.com/photo-1504307651254-35680f356dfd?auto=format&fit=crop&w=1050&q=80", published: true, order: 5 },
+    { id: "program-welding", title: "Welding", category: "Welding", description: "Pengelasan, fabrikasi, dan pekerjaan logam. Detail peluang mengikuti lowongan resmi yang dipublikasikan.", duration: "Informasi posisi menyusul", image_url: "https://images.unsplash.com/photo-1504917595217-d4dc5ebe6122?auto=format&fit=crop&w=1050&q=80", published: true, order: 6 },
   ],
   gallery: [
-    { id: "gallery-01", title: "Proses Pembelajaran", category: "KEGIATAN", image_url: "https://images.unsplash.com/photo-1523240795612-9a054b0db644?auto=format&fit=crop&w=1200&q=80", published: true, order: 1 },
-    { id: "gallery-02", title: "Kolaborasi & Diskusi", category: "KOLABORASI", image_url: "https://images.unsplash.com/photo-1531482615713-2afd69097998?auto=format&fit=crop&w=1200&q=80", published: true, order: 2 },
-    { id: "gallery-03", title: "Pengembangan Keterampilan", category: "PELATIHAN", image_url: "https://images.unsplash.com/photo-1504917595217-d4dc5ebe6122?auto=format&fit=crop&w=1200&q=80", published: true, order: 3 },
+    { id: "gallery-01", title: "Kolaborasi dan Diskusi", category: "KOLABORASI", image_url: "https://images.unsplash.com/photo-1523240795612-9a054b0db644?auto=format&fit=crop&w=1200&q=80", published: true, order: 1 },
+    { id: "gallery-02", title: "Persiapan Kandidat", category: "PERSIAPAN", image_url: "https://images.unsplash.com/photo-1531482615713-2afd69097998?auto=format&fit=crop&w=1200&q=80", published: true, order: 2 },
+    { id: "gallery-03", title: "Lingkungan Kerja Profesional", category: "LINGKUNGAN KERJA", image_url: "https://images.unsplash.com/photo-1504917595217-d4dc5ebe6122?auto=format&fit=crop&w=1200&q=80", published: true, order: 3 },
   ],
 };
 
@@ -63,8 +65,8 @@ function coerceItems<T extends Program | GalleryItem>(items: unknown, fallbacks:
   return items.slice(0, 24).filter((item) => item && typeof item === "object" && item.published === true).map((item: Record<string, unknown>, index) => ({
     ...item,
     id: safeString(item.id, `item-${index}`),
-    title: safeString(item.title, "Program Synergy"),
-    category: safeString(item.category, "SYNERGY"),
+    title: safeString(item.title, "Konten Sinergi Global"),
+    category: safeString(item.category, "SINERGI GLOBAL"),
     image_url: isImageUrl(item.image_url) ? item.image_url : "",
     order: Number.isFinite(Number(item.order)) ? Number(item.order) : index,
     ...(typeof item.description !== "undefined" ? { description: safeString(item.description, "") } : {}),

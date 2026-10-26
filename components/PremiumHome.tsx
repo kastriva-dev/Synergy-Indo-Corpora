@@ -22,14 +22,25 @@ const countryFlags: Record<string, string> = {
   Poland: "🇵🇱", Germany: "🇩🇪", Netherlands: "🇳🇱", "Czech Republic": "🇨🇿",
 };
 
-const workAreas = [
-  { name: "Hospitality", detail: "Hotel, layanan, dan operasional hospitality.", icon: Hotel, number: "01" },
-  { name: "Manufacturing", detail: "Produksi, perakitan, dan proses manufaktur.", icon: Factory, number: "02" },
-  { name: "Electrical", detail: "Instalasi dan pekerjaan teknis kelistrikan.", icon: Zap, number: "03" },
-  { name: "Warehouse", detail: "Gudang, distribusi, dan dukungan logistik.", icon: Warehouse, number: "04" },
-  { name: "Construction", detail: "Pekerjaan lapangan dan dukungan konstruksi.", icon: HardHat, number: "05" },
-  { name: "Welding", detail: "Pengelasan, fabrikasi, dan pekerjaan logam.", icon: Wrench, number: "06" },
+const defaultWorkAreas = [
+  { name: "Hospitality", detail: "Hotel, layanan, dan operasional hospitality.", icon: Hotel, number: "01", categoryFilter: "Hospitality", image_url: "https://images.unsplash.com/photo-1556761175-b413da4baf72?auto=format&fit=crop&w=1050&q=80" },
+  { name: "Manufacturing", detail: "Produksi, perakitan, dan proses manufaktur.", icon: Factory, number: "02", categoryFilter: "Manufacturing", image_url: "https://images.unsplash.com/photo-1581092160562-40aa08e78837?auto=format&fit=crop&w=1050&q=80" },
+  { name: "Electrical", detail: "Instalasi dan pekerjaan teknis kelistrikan.", icon: Zap, number: "03", categoryFilter: "Electrical", image_url: "https://images.unsplash.com/photo-1504917595217-d4dc5ebe6122?auto=format&fit=crop&w=1050&q=80" },
+  { name: "Warehouse", detail: "Gudang, distribusi, dan dukungan logistik.", icon: Warehouse, number: "04", categoryFilter: "Warehouse", image_url: "https://images.unsplash.com/photo-1531482615713-2afd69097998?auto=format&fit=crop&w=1050&q=80" },
+  { name: "Construction", detail: "Pekerjaan lapangan dan dukungan konstruksi.", icon: HardHat, number: "05", categoryFilter: "Construction", image_url: "https://images.unsplash.com/photo-1504307651254-35680f356dfd?auto=format&fit=crop&w=1050&q=80" },
+  { name: "Welding", detail: "Pengelasan, fabrikasi, dan pekerjaan logam.", icon: Wrench, number: "06", categoryFilter: "Welding", image_url: "https://images.unsplash.com/photo-1504917595217-d4dc5ebe6122?auto=format&fit=crop&w=1050&q=80" },
 ];
+
+function iconForWorkArea(label: string, index: number) {
+  const normalized = label.toLowerCase();
+  if (/hotel|hospitality|service|layanan/.test(normalized)) return Hotel;
+  if (/manufactur|factory|produksi|pabrik/.test(normalized)) return Factory;
+  if (/electric|electrical|kelistrik|teknis/.test(normalized)) return Zap;
+  if (/warehouse|logistic|gudang|distribusi/.test(normalized)) return Warehouse;
+  if (/construct|konstruksi|building|bangunan/.test(normalized)) return HardHat;
+  if (/weld|metal|pengelasan|las/.test(normalized)) return Wrench;
+  return [Hotel, Factory, Zap, Warehouse, HardHat, Wrench][index % 6];
+}
 
 const articles = [
   {
@@ -74,6 +85,23 @@ export default function PremiumHome({ content, jobs, recruitmentReady, privacyNo
   const [videoNotice, setVideoNotice] = useState("");
   const [articleNotice, setArticleNotice] = useState("");
 
+  const workAreas = useMemo(() => {
+    const visible = content.programs.filter((program) => program.published).slice(0, 8);
+    if (visible.length === 0) return content.source === "demo" ? defaultWorkAreas : [];
+    return visible.map((program, index) => ({
+      name: program.title,
+      detail: program.description || program.category || "Informasi bidang kerja mengikuti materi resmi perusahaan.",
+      icon: iconForWorkArea(program.title + " " + program.category, index),
+      number: String(index + 1).padStart(2, "0"),
+      categoryFilter: program.category || program.title,
+      image_url: program.image_url,
+    }));
+  }, [content.programs, content.source]);
+  const jobCategories = useMemo(
+    () => Array.from(new Set(jobs.map((job) => job.category.trim()).filter(Boolean))).sort((a, b) => a.localeCompare(b)),
+    [jobs],
+  );
+
   const wa = content.site.contact_whatsapp.replace(/\D/g, "");
   const whatsAppUrl = /^62\d{8,13}$/.test(wa) ? "https://wa.me/" + wa : "";
   const countries = useMemo(() => Array.from(new Set(jobs.map((job) => job.country))).map((name) => ({ name, flag: countryFlags[name] || "🌍", note: "Lowongan terverifikasi" })), [jobs]);
@@ -87,7 +115,7 @@ export default function PremiumHome({ content, jobs, recruitmentReady, privacyNo
     return jobs.filter((job) => {
       const matchesQuery = !query || [job.title, job.country, job.category, job.summary, job.description].some((value) => value.toLowerCase().includes(query));
       const matchesCountry = countryFilter === "Semua negara" || job.country === countryFilter;
-      const matchesCategory = categoryFilter === "Semua bidang" || job.category === categoryFilter;
+      const matchesCategory = categoryFilter === "Semua bidang" || job.category.trim().toLocaleLowerCase() === categoryFilter.trim().toLocaleLowerCase();
       return matchesQuery && matchesCountry && matchesCategory;
     });
   }, [jobs, searchTerm, countryFilter, categoryFilter]);
@@ -197,6 +225,7 @@ export default function PremiumHome({ content, jobs, recruitmentReady, privacyNo
           <a onClick={() => setMenuOpen(false)} href="#bidang">Bidang kerja</a>
           <a onClick={() => setMenuOpen(false)} href="#peluang">Peluang kerja</a>
           <a onClick={() => setMenuOpen(false)} href="#proses">Alur proses</a>
+          <a onClick={() => setMenuOpen(false)} href="#galeri">Galeri</a>
           <a onClick={() => setMenuOpen(false)} href="#berita">Berita</a>
         </nav>
         <a className="header-cta" href="#daftar">Mulai pendaftaran <ArrowUpRight size={16} /></a>
@@ -210,13 +239,13 @@ export default function PremiumHome({ content, jobs, recruitmentReady, privacyNo
         <div className="hero__grid" aria-hidden="true" />
         <div className="container hero__layout">
           <div className="hero__copy">
-            <div className="eyebrow hero-reveal"><span className="eyebrow__line" /> MEMBUKA PELUANG KARIER INTERNASIONAL</div>
+            <div className="eyebrow hero-reveal"><span className="eyebrow__line" /> {content.site.hero_eyebrow}</div>
             <h1 id="hero-title" className="hero-title">
-              <span className="hero-reveal">KETERAMPILAN</span>
-              <span className="hero-reveal">ANDA, PELUANG</span>
-              <em className="hero-reveal">DUNIA.</em>
+              <span className="hero-reveal">{content.site.hero_title_1}</span>
+              <span className="hero-reveal">{content.site.hero_title_2}</span>
+              <em className="hero-reveal">{content.site.hero_title_accent}</em>
             </h1>
-            <p className="hero-description hero-reveal">Temukan arah karier global dengan informasi yang jelas, persiapan yang terarah, dan pendampingan sesuai proses resmi perusahaan.</p>
+            <p className="hero-description hero-reveal">{content.site.hero_description}</p>
             <div className="hero-actions hero-reveal">
               <a className="button button--lime" href="#peluang">Jelajahi peluang <ArrowRight size={18} /></a>
               <a className="button button--outline" href="#tentang">Kenali Sinergi Global <ArrowDownRight size={17} /></a>
@@ -225,9 +254,9 @@ export default function PremiumHome({ content, jobs, recruitmentReady, privacyNo
           </div>
           <div className="hero-side reveal">
             <div className="hero-side__label"><span className="hero-side__dot" /> YOUR NEXT CHAPTER</div>
-            <div className="hero-side__number">01<span>/</span>06</div>
+            <div className="hero-side__number">{String(workAreas.length > 0 ? 1 : 0).padStart(2, "0")}<span>/</span>{String(workAreas.length).padStart(2, "0")}</div>
             <div className="hero-side__rule" />
-            <p>Enam bidang kerja untuk membantu Anda menemukan jalur yang sesuai dengan keterampilan dan pengalaman.</p>
+            <p>{workAreas.length} bidang kerja ditampilkan dari konten yang dipublikasikan pada panel admin.</p>
             <a href="#bidang" aria-label="Lihat bidang kerja">Lihat bidang kerja <ArrowUpRight size={17} /></a>
           </div>
           <a className="hero-scroll" href="#tentang" aria-label="Gulir ke bagian tentang"><ArrowDown size={17} /></a>
@@ -238,7 +267,9 @@ export default function PremiumHome({ content, jobs, recruitmentReady, privacyNo
         <div className="sector-ticker__label"><span className="ticker-dot" /> BIDANG KERJA</div>
         <div className="sector-ticker__viewport"><div className="sector-ticker__track">
           {Array.from({ length: 2 }).map((_, index) => (
-            <span className="sector-ticker__set" key={index}>HOSPITALITY <b>✳</b> MANUFACTURING <b>✳</b> ELECTRICAL <b>✳</b> WAREHOUSE <b>✳</b> CONSTRUCTION <b>✳</b> WELDING <b>✳</b></span>
+            <span className="sector-ticker__set" key={index}>
+              {workAreas.map((area, areaIndex) => <span key={area.name + "-" + areaIndex}>{area.name.toUpperCase()} <b>✳</b></span>)}
+            </span>
           ))}
         </div></div>
         <span className="sector-ticker__hint">EXPLORE YOUR SKILLS</span>
@@ -266,7 +297,7 @@ export default function PremiumHome({ content, jobs, recruitmentReady, privacyNo
             </div>
             <div className="about-copy reveal">
               <p className="lead-copy">Kami hadir untuk membantu calon pekerja mengenali peluang kerja internasional dan memahami langkah persiapan yang dibutuhkan.</p>
-              <p>Sinergi Global merupakan brand dalam ekosistem PT Sinergi Corpora Group. Informasi perusahaan, legalitas, posisi yang tersedia, serta tahapan rekrutmen akan ditampilkan berdasarkan data resmi yang sudah diverifikasi.</p>
+              <p>{content.site.about_description}</p>
               <a className="text-link" href="#proses">Kenali alur proses <ArrowUpRight size={17} /></a>
             </div>
           </div>
@@ -283,15 +314,15 @@ export default function PremiumHome({ content, jobs, recruitmentReady, privacyNo
           <div className="section-kicker reveal"><span>02</span><span className="section-kicker__line" /> BIDANG PEKERJAAN <span className="section-kicker__right">SKILLS MEET OPPORTUNITY</span></div>
           <div className="section-heading-row">
             <h2 className="display-title reveal">KETERAMPILAN<br /><span>PUNYA ARAH.</span></h2>
-            <p className="section-intro reveal">Jelajahi bidang yang relevan dengan pengalaman dan keterampilan Anda. Daftar ini adalah kategori awal untuk desain dan dapat disesuaikan dengan kebutuhan resmi perusahaan.</p>
+            <p className="section-intro reveal">Bidang kerja mengikuti konten yang dipublikasikan melalui CMS. Lowongan aktual akan muncul pada bagian peluang setelah diverifikasi dan diterbitkan tim rekrutmen.</p>
           </div>
           <div className="work-grid">
             {workAreas.map((area) => {
               const Icon = area.icon;
               return (
-                <a className="work-card reveal" href="#peluang" key={area.name} onClick={() => setCategoryFilter(area.name)}>
+                <a className="work-card reveal" href="#peluang" key={area.number} onClick={() => setCategoryFilter(area.categoryFilter)}>
                   <div className="work-card__top"><span>{area.number}</span><ArrowUpRight size={18} /></div>
-                  <div className="work-card__icon"><Icon size={25} strokeWidth={1.7} /></div>
+                  <div className="work-card__icon">{area.image_url ? <SafeMediaImage className="work-card__icon-image" src={area.image_url} alt="" /> : <Icon size={25} strokeWidth={1.7} />}</div>
                   <h3>{area.name}</h3>
                   <p>{area.detail}</p>
                   <span className="work-card__link">Lihat posisi <ArrowRight size={15} /></span>
@@ -312,7 +343,7 @@ export default function PremiumHome({ content, jobs, recruitmentReady, privacyNo
           <div className="job-search reveal">
             <label className="job-search__keyword"><Search size={20} /><span className="sr-only">Cari posisi</span><input value={searchTerm} onChange={(event) => setSearchTerm(event.target.value)} placeholder="Cari posisi, keterampilan, atau negara..." /></label>
             <label className="job-search__select"><MapPin size={18} /><span className="sr-only">Filter negara</span><select value={countryFilter} onChange={(event) => setCountryFilter(event.target.value)}><option>Semua negara</option>{countries.map((country) => <option key={country.name}>{country.name}</option>)}</select><ChevronDown size={15} /></label>
-            <label className="job-search__select"><Briefcase size={18} /><span className="sr-only">Filter bidang</span><select value={categoryFilter} onChange={(event) => setCategoryFilter(event.target.value)}><option>Semua bidang</option>{workAreas.map((area) => <option key={area.name}>{area.name}</option>)}</select><ChevronDown size={15} /></label>
+            <label className="job-search__select"><Briefcase size={18} /><span className="sr-only">Filter bidang</span><select value={categoryFilter} onChange={(event) => setCategoryFilter(event.target.value)}><option>Semua bidang</option>{jobCategories.map((category) => <option key={category}>{category}</option>)}</select><ChevronDown size={15} /></label>
             <button className="button button--navy job-search__button" type="button" onClick={() => document.getElementById("daftar")?.scrollIntoView({ behavior: "smooth" })}>Daftar minat <ArrowUpRight size={17} /></button>
           </div>
           <div className="job-results-meta"><span>{filteredJobs.length} lowongan aktif</span><span>DATA PUBLIKASI REKRUTMEN</span></div>
@@ -392,9 +423,31 @@ export default function PremiumHome({ content, jobs, recruitmentReady, privacyNo
         </div>
       </section>
 
+      {content.gallery.length > 0 && (
+        <section className="news-section section-space" id="galeri">
+          <div className="container">
+            <div className="section-kicker reveal"><span>07</span><span className="section-kicker__line" /> GALERI SINERGI GLOBAL <span className="section-kicker__right">MOMEN & KOLABORASI</span></div>
+            <div className="section-heading-row">
+              <h2 className="display-title reveal">CERITA DALAM<br /><span>SETIAP MOMEN.</span></h2>
+              <p className="section-intro reveal">Foto dan dokumentasi yang dipublikasikan melalui panel admin Sinergi Global.</p>
+            </div>
+            <div className="news-grid">
+              {content.gallery.slice(0, 8).map((item, index) => (
+                <article className="news-card reveal" key={item.id}>
+                  <div className="news-card__image"><SafeMediaImage src={item.image_url} alt={item.title} /><span>{String(index + 1).padStart(2, "0")}</span></div>
+                  <div className="news-card__meta"><span>{item.category}</span><span>DOKUMENTASI</span></div>
+                  <h3>{item.title}</h3>
+                </article>
+              ))}
+            </div>
+            {content.source === "demo" && <p className="section-intro">Catatan: foto pada mode demo adalah ilustrasi dan bukan dokumentasi kegiatan resmi perusahaan.</p>}
+          </div>
+        </section>
+      )}
+
       <section className="news-section section-space" id="berita">
         <div className="container">
-          <div className="section-kicker reveal"><span>07</span><span className="section-kicker__line" /> KABAR & PANDUAN <span className="section-kicker__right">KNOW BEFORE YOU GO</span></div>
+          <div className="section-kicker reveal"><span>08</span><span className="section-kicker__line" /> KABAR & PANDUAN <span className="section-kicker__right">KNOW BEFORE YOU GO</span></div>
           <div className="section-heading-row">
             <h2 className="display-title reveal">BEKAL INFORMASI.<br /><span>LANGKAH LEBIH SIAP.</span></h2>
             <p className="section-intro reveal">Ruang untuk berita perusahaan, panduan kandidat, dan informasi terbaru. Artikel di bawah adalah contoh tampilan, bukan publikasi resmi.</p>
@@ -416,7 +469,7 @@ export default function PremiumHome({ content, jobs, recruitmentReady, privacyNo
       <section className="registration-section section-space" id="daftar">
         <div className="container registration-layout">
           <div className="registration-copy">
-            <div className="section-kicker section-kicker--light reveal"><span>08</span><span className="section-kicker__line" /> FORM MINAT KANDIDAT</div>
+            <div className="section-kicker section-kicker--light reveal"><span>09</span><span className="section-kicker__line" /> FORM MINAT KANDIDAT</div>
             <h2 className="display-title reveal">MULAI DARI<br /><span>LANGKAH PERTAMA.</span></h2>
             <p className="reveal">Pilih lowongan aktif, lengkapi informasi dasar, dan unggah CV PDF. Data hanya dikirim bila backend rekrutmen serta pemberitahuan privasi resmi sudah diaktifkan.</p>
             <div className="registration-points reveal"><span><CheckCircle2 size={17} /> Informasi kandidat</span><span><CheckCircle2 size={17} /> Lowongan aktif</span><span><CheckCircle2 size={17} /> CV PDF tersimpan privat</span></div>
@@ -446,7 +499,7 @@ export default function PremiumHome({ content, jobs, recruitmentReady, privacyNo
 
       <section className="contact-section section-space" id="kontak">
         <div className="container contact-layout">
-          <div><div className="section-kicker reveal"><span>09</span><span className="section-kicker__line" /> HUBUNGI SINERGI GLOBAL</div><h2 className="display-title reveal">TERHUBUNG.<br /><span>SIAP MELANGKAH.</span></h2></div>
+          <div><div className="section-kicker reveal"><span>10</span><span className="section-kicker__line" /> HUBUNGI SINERGI GLOBAL</div><h2 className="display-title reveal">TERHUBUNG.<br /><span>SIAP MELANGKAH.</span></h2></div>
           <div className="contact-card reveal">
             <p>Untuk pertanyaan resmi, gunakan kontak perusahaan yang sudah diverifikasi.</p>
             {whatsAppUrl ? <a href={whatsAppUrl} target="_blank" rel="noreferrer" className="contact-item"><span><Globe size={18} /></span><div><small>WHATSAPP RESMI</small><strong>Mulai percakapan</strong></div><ArrowUpRight size={17} /></a> : <div className="contact-item contact-item--muted"><span><Globe size={18} /></span><div><small>WHATSAPP</small><strong>Kontak resmi menyusul</strong></div></div>}
@@ -461,7 +514,7 @@ export default function PremiumHome({ content, jobs, recruitmentReady, privacyNo
           <div className="footer-main">
             <a className="sg-brand sg-brand--footer" href="#top"><span className="sg-brand__mark">SG<span>.</span></span><span className="sg-brand__name">SINERGI GLOBAL<small>CAREER OPPORTUNITIES</small></span></a>
             <p>Menghubungkan keterampilan, persiapan, dan informasi peluang karier internasional dengan lebih terarah.</p>
-            <div className="footer-links"><span>JELAJAHI</span><a href="#bidang">Bidang kerja</a><a href="#peluang">Lowongan aktif</a><a href="#proses">Alur proses</a><a href="#berita">Berita & panduan</a></div>
+            <div className="footer-links"><span>JELAJAHI</span><a href="#bidang">Bidang kerja</a><a href="#peluang">Lowongan aktif</a><a href="#proses">Alur proses</a><a href="#galeri">Galeri</a><a href="#berita">Berita & panduan</a></div>
             <div className="footer-social"><span>MEDIA SOSIAL</span><div><span aria-label="Instagram, tautan resmi menyusul"><Instagram size={18} /></span><span aria-label="LinkedIn, tautan resmi menyusul"><Linkedin size={18} /></span><span aria-label="Informasi grup perusahaan"><Building2 size={18} /></span></div><small>Tautan resmi menyusul</small></div>
           </div>
           <div className="footer-group-note">PT SINERGI CORPORA GROUP · JAVA INDO CORPORA <span>Logo dan hubungan grup perlu disesuaikan dengan aset resmi.</span></div>
