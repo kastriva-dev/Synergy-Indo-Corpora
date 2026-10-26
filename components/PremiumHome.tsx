@@ -1,215 +1,474 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import type { FormEvent } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
-import { ArrowDown, ArrowDownRight, ArrowLeft, ArrowRight, ArrowUpRight, Menu, MousePointer2, MoveUpRight, X } from "lucide-react";
+import {
+  ArrowDown, ArrowDownRight, ArrowRight, ArrowUpRight, BadgeCheck, Briefcase,
+  Building2, CheckCircle2, ChevronDown, Factory, Globe,
+  HardHat, Hotel, Instagram, Linkedin, Mail, MapPin, Menu, Play, Search,
+  ShieldCheck, UploadCloud, Users, Warehouse, Wrench, X, Zap
+} from "lucide-react";
 import type { PublicContent } from "@/lib/content";
+import SafeMediaImage from "@/components/media/SafeMediaImage";
 
-const heroPhoto = "https://images.unsplash.com/photo-1504917595217-d4dc5ebe6122?auto=format&fit=crop&w=2100&q=85";
-const steps = [
-  { num: "01", title: "KENALI POTENSI", body: "Menemukan arah belajar berdasarkan kebutuhan dan tujuan yang ingin dicapai." },
-  { num: "02", title: "BANGUN KETERAMPILAN", body: "Memperkuat pemahaman dan kemampuan melalui proses belajar yang terarah." },
-  { num: "03", title: "SIAP MELANGKAH", body: "Menghubungkan pembelajaran dengan kesiapan menghadapi tantangan dunia kerja." },
+type JobSample = {
+  id: string;
+  title: string;
+  country: string;
+  category: string;
+  summary: string;
+  image: string;
+  flag: string;
+};
+
+const jobSamples: JobSample[] = [
+  {
+    id: "pl-welder",
+    title: "Welder / Juru Las",
+    country: "Poland",
+    category: "Welding",
+    summary: "Contoh posisi untuk tenaga kerja terampil di bidang pengelasan dan fabrikasi.",
+    image: "https://images.unsplash.com/photo-1504917595217-d4dc5ebe6122?auto=format&fit=crop&w=1000&q=82",
+    flag: "🇵🇱",
+  },
+  {
+    id: "pl-warehouse",
+    title: "Warehouse Operator",
+    country: "Poland",
+    category: "Warehouse",
+    summary: "Contoh peran untuk operasional gudang, penataan barang, dan proses logistik.",
+    image: "https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?auto=format&fit=crop&w=1000&q=82",
+    flag: "🇵🇱",
+  },
+  {
+    id: "de-electrician",
+    title: "Electrician",
+    country: "Germany",
+    category: "Electrical",
+    summary: "Contoh posisi teknis untuk instalasi dan pemeliharaan kelistrikan.",
+    image: "https://images.unsplash.com/photo-1621905251189-08b45d6a269e?auto=format&fit=crop&w=1000&q=82",
+    flag: "🇩🇪",
+  },
+  {
+    id: "cz-production",
+    title: "Production Operator",
+    country: "Czech Republic",
+    category: "Manufacturing",
+    summary: "Contoh peran untuk kegiatan produksi dan pengoperasian proses manufaktur.",
+    image: "https://images.unsplash.com/photo-1581092160562-40aa08e78837?auto=format&fit=crop&w=1000&q=82",
+    flag: "🇨🇿",
+  },
+  {
+    id: "nl-hospitality",
+    title: "Hospitality Crew",
+    country: "Netherlands",
+    category: "Hospitality",
+    summary: "Contoh peran layanan dan operasional hospitality dengan orientasi pelayanan.",
+    image: "https://images.unsplash.com/photo-1551218808-94e220e084d2?auto=format&fit=crop&w=1000&q=82",
+    flag: "🇳🇱",
+  },
+  {
+    id: "de-construction",
+    title: "Construction Worker",
+    country: "Germany",
+    category: "Construction",
+    summary: "Contoh posisi pendukung proyek konstruksi dan pekerjaan lapangan.",
+    image: "https://images.unsplash.com/photo-1504307651254-35680f356dfd?auto=format&fit=crop&w=1000&q=82",
+    flag: "🇩🇪",
+  },
 ];
 
-function arrowLink(href: string, text: string, className: string) {
-  return <a className={className} href={href} data-cursor="OPEN">{text}<ArrowUpRight size={17} strokeWidth={1.8}/></a>;
-}
+const workAreas = [
+  { name: "Hospitality", detail: "Hotel, layanan, dan operasional hospitality.", icon: Hotel, number: "01" },
+  { name: "Manufacturing", detail: "Produksi, perakitan, dan proses manufaktur.", icon: Factory, number: "02" },
+  { name: "Electrical", detail: "Instalasi dan pekerjaan teknis kelistrikan.", icon: Zap, number: "03" },
+  { name: "Warehouse", detail: "Gudang, distribusi, dan dukungan logistik.", icon: Warehouse, number: "04" },
+  { name: "Construction", detail: "Pekerjaan lapangan dan dukungan konstruksi.", icon: HardHat, number: "05" },
+  { name: "Welding", detail: "Pengelasan, fabrikasi, dan pekerjaan logam.", icon: Wrench, number: "06" },
+];
+
+const countries = [
+  { name: "Poland", flag: "🇵🇱", note: "Contoh negara tujuan" },
+  { name: "Germany", flag: "🇩🇪", note: "Contoh negara tujuan" },
+  { name: "Netherlands", flag: "🇳🇱", note: "Contoh negara tujuan" },
+  { name: "Czech Republic", flag: "🇨🇿", note: "Contoh negara tujuan" },
+];
+
+const articles = [
+  {
+    title: "Persiapan dokumen sebelum melamar kerja ke luar negeri",
+    category: "PANDUAN CALON PEKERJA",
+    readTime: "Panduan",
+    image: "https://images.unsplash.com/photo-1450101499163-c8848c66ca85?auto=format&fit=crop&w=900&q=82",
+  },
+  {
+    title: "Mengenal budaya kerja dan komunikasi lintas negara",
+    category: "PERSIAPAN KARIER",
+    readTime: "Insight",
+    image: "https://images.unsplash.com/photo-1521737711867-e3b97375f902?auto=format&fit=crop&w=900&q=82",
+  },
+  {
+    title: "Keterampilan teknis yang perlu disiapkan sejak awal",
+    category: "PENGEMBANGAN KOMPETENSI",
+    readTime: "Tips",
+    image: "https://images.unsplash.com/photo-1581092334651-ddf26d9a09d0?auto=format&fit=crop&w=900&q=82",
+  },
+];
+
+const processSteps = [
+  { number: "01", title: "Daftarkan minat", body: "Isi informasi dasar dan bidang kerja yang ingin dijajaki." },
+  { number: "02", title: "Pemeriksaan awal", body: "Tim akan memeriksa kelengkapan dan kecocokan informasi sesuai proses resmi." },
+  { number: "03", title: "Persiapan kandidat", body: "Informasi mengenai dokumen, kompetensi, dan tahapan berikutnya dijelaskan sesuai kebutuhan." },
+  { number: "04", title: "Informasi lanjutan", body: "Kandidat menerima arahan berikutnya setelah proses dan peluang yang relevan dikonfirmasi." },
+];
 
 export default function PremiumHome({ content }: { content: PublicContent }) {
   const rootRef = useRef<HTMLElement>(null);
-  const cursorRef = useRef<HTMLDivElement>(null);
-  const trackRef = useRef<HTMLDivElement>(null);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [countryFilter, setCountryFilter] = useState("Semua negara");
+  const [categoryFilter, setCategoryFilter] = useState("Semua bidang");
+  const [selectedPosition, setSelectedPosition] = useState("");
+  const [targetCountry, setTargetCountry] = useState("Poland");
+  const [cvName, setCvName] = useState("");
+  const [formMessage, setFormMessage] = useState("");
+  const [videoNotice, setVideoNotice] = useState("");
+  const [articleNotice, setArticleNotice] = useState("");
+
   const wa = content.site.contact_whatsapp.replace(/\D/g, "");
-  const whatsAppUrl = /^62\d{8,13}$/.test(wa) ? `https://wa.me/${wa}` : "";
+  const whatsAppUrl = /^62\d{8,13}$/.test(wa) ? "https://wa.me/" + wa : "";
   const email = content.site.contact_email.includes("@") ? content.site.contact_email : "";
+  const address = /akan|belum|informasi alamat/i.test(content.site.contact_address)
+    ? ""
+    : content.site.contact_address;
+
+  const filteredJobs = useMemo(() => {
+    const query = searchTerm.trim().toLowerCase();
+    return jobSamples.filter((job) => {
+      const matchesQuery = !query || [job.title, job.country, job.category, job.summary].some((value) => value.toLowerCase().includes(query));
+      const matchesCountry = countryFilter === "Semua negara" || job.country === countryFilter;
+      const matchesCategory = categoryFilter === "Semua bidang" || job.category === categoryFilter;
+      return matchesQuery && matchesCountry && matchesCategory;
+    });
+  }, [searchTerm, countryFilter, categoryFilter]);
 
   useEffect(() => {
     const root = rootRef.current;
     if (!root) return;
-    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     gsap.registerPlugin(ScrollTrigger);
-    const ctx = gsap.context(() => {
-      if (reduce) return;
-      gsap.fromTo(".hero-animate", { y: 70, opacity: 0 }, { y: 0, opacity: 1, duration: 1.25, ease: "power3.out", stagger: .12, delay: .16 });
-      gsap.fromTo(".hero-media", { scale: 1.17 }, { scale: 1, duration: 2.2, ease: "power2.out" });
-      gsap.to(".hero-media", { yPercent: 10, ease: "none", scrollTrigger: { trigger: ".hero", start: "top top", end: "bottom top", scrub: true } });
-      gsap.utils.toArray<HTMLElement>("[data-reveal]").forEach((element) => {
-        gsap.fromTo(element, { y: 66, autoAlpha: 0 }, {
-          y: 0, autoAlpha: 1, duration: 1.05, ease: "power3.out", clearProps: "transform,visibility,opacity",
-          scrollTrigger: { trigger: element, start: "top 89%", once: true },
+    const context = gsap.context(() => {
+      if (reducedMotion) return;
+      gsap.fromTo(".hero-reveal", { y: 32, autoAlpha: 0 }, {
+        y: 0, autoAlpha: 1, duration: 0.9, ease: "power3.out", stagger: 0.1, delay: 0.12,
+      });
+      gsap.fromTo(".hero__photo", { scale: 1.08 }, { scale: 1, duration: 1.8, ease: "power2.out" });
+      gsap.utils.toArray<HTMLElement>(".reveal").forEach((element) => {
+        gsap.fromTo(element, { y: 28, autoAlpha: 0 }, {
+          y: 0, autoAlpha: 1, duration: 0.7, ease: "power2.out",
+          scrollTrigger: { trigger: element, start: "top 90%", once: true },
         });
       });
-      gsap.utils.toArray<HTMLElement>("[data-line]").forEach((element) => {
-        gsap.fromTo(element, { scaleX: 0, transformOrigin: "left center" }, { scaleX: 1, duration: 1.3, ease: "power3.out", scrollTrigger: { trigger: element, start: "top 92%", once: true } });
-      });
     }, root);
+    return () => context.revert();
+  }, []);
 
-    // Pointer khusus desktop. Cursor tetap native pada touch device.
-    const isFine = window.matchMedia("(pointer: fine)").matches && !reduce;
-    const cursor = cursorRef.current;
-    let cleanupCursor = () => {};
-    if (isFine && cursor) {
-      const x = gsap.quickTo(cursor, "x", { duration: .22, ease: "power3.out" });
-      const y = gsap.quickTo(cursor, "y", { duration: .22, ease: "power3.out" });
-      const onMove = (event: PointerEvent) => { x(event.clientX); y(event.clientY); cursor.classList.add("visible"); };
-      const onOver = (event: PointerEvent) => {
-        const target = event.target instanceof Element ? event.target.closest("[data-cursor],a,button,.tilt-card,.gallery-card") : null;
-        if (!target) return;
-        cursor.classList.add("is-active");
-        const label = target.getAttribute("data-cursor") || "VIEW";
-        const inner = cursor.querySelector("span");
-        if (inner) inner.textContent = label;
-      };
-      const onOut = (event: PointerEvent) => {
-        const related = event.relatedTarget instanceof Element ? event.relatedTarget.closest("[data-cursor],a,button,.tilt-card,.gallery-card") : null;
-        if (!related) cursor.classList.remove("is-active");
-      };
-      const onLeave = () => cursor.classList.remove("visible");
-      window.addEventListener("pointermove", onMove);
-      document.addEventListener("pointerover", onOver);
-      document.addEventListener("pointerout", onOut);
-      document.addEventListener("pointerleave", onLeave);
-      cleanupCursor = () => { window.removeEventListener("pointermove", onMove); document.removeEventListener("pointerover", onOver); document.removeEventListener("pointerout", onOut); document.removeEventListener("pointerleave", onLeave); };
-    }
+  function chooseJob(job: JobSample) {
+    setSelectedPosition(job.title);
+    setTargetCountry(job.country);
+    document.getElementById("daftar")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
 
-    // Tilt interaktif di dalam kartu, tanpa membuat seluruh halaman re-render.
-    const tiltNodes = Array.from(root.querySelectorAll<HTMLElement>(".tilt-card"));
-    const tiltCleanups = tiltNodes.map((node) => {
-      if (!isFine) return () => {};
-      const move = (event: MouseEvent) => {
-        const r = node.getBoundingClientRect();
-        const dx = ((event.clientX - r.left) / r.width - .5) * 2;
-        const dy = ((event.clientY - r.top) / r.height - .5) * 2;
-        gsap.to(node, { rotateX: -dy * 6, rotateY: dx * 9, y: -8, transformPerspective: 900, duration: .35, ease: "power2.out" });
-        node.style.setProperty("--mx", `${((dx + 1) / 2) * 100}%`);
-        node.style.setProperty("--my", `${((dy + 1) / 2) * 100}%`);
-      };
-      const leave = () => gsap.to(node, { rotateX: 0, rotateY: 0, y: 0, duration: .65, ease: "elastic.out(1,.5)" });
-      node.addEventListener("mousemove", move);
-      node.addEventListener("mouseleave", leave);
-      return () => { node.removeEventListener("mousemove", move); node.removeEventListener("mouseleave", leave); };
-    });
-
-    // Wheel mouse: geser horizontal selama kartu masih dapat digeser.
-    const track = trackRef.current;
-    let cleanupTrack = () => {};
-    if (track) {
-      const wheel = (event: WheelEvent) => {
-        if (Math.abs(event.deltaY) <= Math.abs(event.deltaX)) return;
-        const max = track.scrollWidth - track.clientWidth;
-        if (max <= 0) return;
-        const canMove = (event.deltaY > 0 && track.scrollLeft < max - 2) || (event.deltaY < 0 && track.scrollLeft > 2);
-        if (canMove) { event.preventDefault(); track.scrollLeft += event.deltaY; }
-      };
-      let held = false; let startX = 0; let startLeft = 0; let pointerId = -1;
-      const down = (event: PointerEvent) => {
-        if (event.pointerType === "touch") return;
-        held = true; pointerId = event.pointerId; startX = event.clientX; startLeft = track.scrollLeft;
-        track.classList.add("is-dragging");
-      };
-      const move = (event: PointerEvent) => { if (held && event.pointerId === pointerId) track.scrollLeft = startLeft - (event.clientX - startX); };
-      const up = () => { held = false; track.classList.remove("is-dragging"); };
-      track.addEventListener("wheel", wheel, { passive: false });
-      track.addEventListener("pointerdown", down);
-      window.addEventListener("pointermove", move);
-      window.addEventListener("pointerup", up);
-      window.addEventListener("pointercancel", up);
-      cleanupTrack = () => { track.removeEventListener("wheel", wheel); track.removeEventListener("pointerdown", down); window.removeEventListener("pointermove", move); window.removeEventListener("pointerup", up); window.removeEventListener("pointercancel", up); };
-    }
-
-    return () => { ctx.revert(); cleanupCursor(); tiltCleanups.forEach((fn) => fn()); cleanupTrack(); };
-  }, [content]);
+  function submitInterest(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setFormMessage("Pendaftaran kandidat belum dibuka. Data dan CV tidak dikirim atau disimpan.");
+  }
 
   return (
-    <main ref={rootRef} id="atas">
-      <div className="custom-cursor" aria-hidden="true" ref={cursorRef}><span>VIEW</span></div>
-      <div className="top-progress" aria-hidden="true"/>
+    <main ref={rootRef} id="top" className="sg-site">
+      <div className="preview-ribbon"><span className="preview-dot" /> {content.source === "gas" ? "CMS GOOGLE SHEETS · PENDAFTARAN DAN UNGGAH CV NONAKTIF" : "PRATINJAU DESAIN · DATA POSISI MASIH CONTOH"}</div>
       <header className="site-header">
-        <a className="brand" href="#atas" aria-label="Synergy Indo Corpora, kembali ke atas" data-cursor="TOP">
-          <span className="brand-mark">S<span>.</span></span>
-          <span className="brand-text">SYNERGY <small>INDO CORPORA</small></span>
+        <a className="sg-brand" href="#top" aria-label="Sinergi Global, kembali ke atas">
+          <span className="sg-brand__mark">SG<span>.</span></span>
+          <span className="sg-brand__name">SINERGI GLOBAL<small>CAREER OPPORTUNITIES</small></span>
         </a>
-        <nav className={`site-nav ${menuOpen ? "open" : ""}`} aria-label="Navigasi utama">
-          <a onClick={() => setMenuOpen(false)} href="#tentang">TENTANG</a>
-          <a onClick={() => setMenuOpen(false)} href="#program">PROGRAM</a>
-          <a onClick={() => setMenuOpen(false)} href="#perjalanan">PENDEKATAN</a>
-          <a onClick={() => setMenuOpen(false)} href="#galeri">GALERI</a>
-          <a onClick={() => setMenuOpen(false)} href="#hubungi">KONTAK</a>
+        <nav className={"site-nav" + (menuOpen ? " is-open" : "")} aria-label="Navigasi utama">
+          <a onClick={() => setMenuOpen(false)} href="#tentang">Tentang</a>
+          <a onClick={() => setMenuOpen(false)} href="#bidang">Bidang kerja</a>
+          <a onClick={() => setMenuOpen(false)} href="#peluang">Peluang kerja</a>
+          <a onClick={() => setMenuOpen(false)} href="#proses">Alur proses</a>
+          <a onClick={() => setMenuOpen(false)} href="#berita">Berita</a>
         </nav>
-        <a className="header-action" href="#hubungi" data-cursor="GO">HUBUNGI KAMI <ArrowUpRight size={17}/></a>
-        <button type="button" className="menu-toggle" aria-label={menuOpen ? "Tutup menu" : "Buka menu"} aria-expanded={menuOpen} onClick={() => setMenuOpen((v) => !v)}>{menuOpen ? <X/> : <Menu/>}</button>
+        <a className="header-cta" href="#daftar">Informasi pendaftaran <ArrowUpRight size={16} /></a>
+        <button type="button" className="menu-toggle" aria-label={menuOpen ? "Tutup menu" : "Buka menu"} aria-expanded={menuOpen} onClick={() => setMenuOpen((value) => !value)}>
+          {menuOpen ? <X size={23} /> : <Menu size={23} />}
+        </button>
       </header>
 
       <section className="hero" aria-labelledby="hero-title">
-        <div className="hero-media" style={{ backgroundImage: `linear-gradient(90deg,rgba(7,10,16,.84) 0%,rgba(7,10,16,.48) 47%,rgba(7,10,16,.28) 100%),url('${heroPhoto}')` }}/>
-        <div className="hero-grid"/>
-        <div className="hero-vignette"/>
-        <div className="hero-orb orb-one" aria-hidden="true"/><div className="hero-orb orb-two" aria-hidden="true"/>
-        <div className="hero-content container">
-          <div className="eyebrow hero-animate"><span className="eyebrow-rule"/>{content.site.hero_eyebrow}</div>
-          <h1 id="hero-title" className="hero-title" aria-label={`${content.site.hero_title_1} ${content.site.hero_title_2} ${content.site.hero_title_accent}`}>
-            <span className="hero-animate">{content.site.hero_title_1}</span>
-            <span className="hero-animate">{content.site.hero_title_2}</span>
-            <em className="hero-animate">{content.site.hero_title_accent}</em>
-          </h1>
-          <div className="hero-bottom hero-animate">
-            <p>{content.site.hero_description}</p>
-            {arrowLink("#program", "JELAJAHI PROGRAM", "pill-button pill-primary")}
+        <div className="hero__photo" aria-hidden="true" style={{ backgroundImage: "linear-gradient(90deg, rgba(5, 21, 34, .97) 0%, rgba(5, 21, 34, .84) 42%, rgba(5, 21, 34, .34) 100%), url('https://images.unsplash.com/photo-1504917595217-d4dc5ebe6122?auto=format&fit=crop&w=2200&q=88')" }} />
+        <div className="hero__grid" aria-hidden="true" />
+        <div className="container hero__layout">
+          <div className="hero__copy">
+            <div className="eyebrow hero-reveal"><span className="eyebrow__line" /> MEMBUKA PELUANG KARIER INTERNASIONAL</div>
+            <h1 id="hero-title" className="hero-title">
+              <span className="hero-reveal">KETERAMPILAN</span>
+              <span className="hero-reveal">ANDA, PELUANG</span>
+              <em className="hero-reveal">DUNIA.</em>
+            </h1>
+            <p className="hero-description hero-reveal">Temukan arah karier global dengan informasi yang jelas, persiapan yang terarah, dan pendampingan sesuai proses resmi perusahaan.</p>
+            <div className="hero-actions hero-reveal">
+              <a className="button button--lime" href="#peluang">Jelajahi peluang <ArrowRight size={18} /></a>
+              <a className="button button--outline" href="#tentang">Kenali Sinergi Global <ArrowDownRight size={17} /></a>
+            </div>
+            <div className="hero-note hero-reveal"><ShieldCheck size={17} /> Informasi peluang dan proses akan dikonfirmasi sebelum dipublikasikan.</div>
           </div>
-          <div className="hero-kicker hero-animate"><span className="hero-smallline"/> GROW · LEARN · EVOLVE</div>
-        </div>
-        <div className="hero-rail" aria-hidden="true"><span>01 / 06</span><span>SCROLL TO EXPLORE <ArrowDown size={14}/></span></div>
-        <a className="hero-scroll" href="#tentang" data-cursor="SCROLL" aria-label="Scroll ke bagian tentang kami"><ArrowDown size={18}/></a>
-      </section>
-
-      <div className="ticker-shell"><div className="ticker-label"><span className="live-dot"/> OUR MINDSET</div><div className="ticker-viewport"><div className="ticker-content" aria-label="Learning, Growth, Transformation">
-        {Array.from({length: 4}).map((_, i) => <span className="ticker-set" key={i}>LEARNING <b>✳</b> GROWTH <b>✳</b> TRANSFORMATION <b>✳</b> FUTURE-READY <b>✳</b></span>)}
-      </div></div><span className="ticker-hint">HOVER TO PAUSE</span></div>
-
-      <section className="about section-pad container" id="tentang">
-        <div className="section-head" data-reveal><div className="section-overline"><span>01 — TENTANG KAMI</span><span className="overline-right">BUILT FOR WHAT'S NEXT</span></div><div className="line-rule" data-line/></div>
-        <div className="about-layout">
-          <div data-reveal className="about-left"><div className="tiny-label"><span className="asterisk">✳</span> WHO WE ARE</div><div className="about-stamp"><span>SYNERGY</span><strong>PROGRESS<br/>IN MOTION.</strong><small>EVOLVING TOGETHER — EST. / —</small></div></div>
-          <div className="about-right"><h2 data-reveal className="display-heading">KAMI PERCAYA<br/>PADA <span className="accent">PROSES</span><br/>YANG MEMBAWA<br/>PERUBAHAN.</h2><p data-reveal>{content.site.about_description}</p><a href="#perjalanan" className="text-link" data-reveal data-cursor="GO">KENALI PENDEKATAN KAMI <ArrowUpRight size={18}/></a></div>
+          <div className="hero-side reveal">
+            <div className="hero-side__label"><span className="hero-side__dot" /> YOUR NEXT CHAPTER</div>
+            <div className="hero-side__number">01<span>/</span>06</div>
+            <div className="hero-side__rule" />
+            <p>Enam bidang kerja untuk membantu Anda menemukan jalur yang sesuai dengan keterampilan dan pengalaman.</p>
+            <a href="#bidang" aria-label="Lihat bidang kerja">Lihat bidang kerja <ArrowUpRight size={17} /></a>
+          </div>
+          <a className="hero-scroll" href="#tentang" aria-label="Gulir ke bagian tentang"><ArrowDown size={17} /></a>
         </div>
       </section>
 
-      <section className="programs-section" id="program">
-        <div className="container"><div className="section-head" data-reveal><div className="section-overline"><span>02 — PROGRAM & KEGIATAN</span><span className="overline-right">WHAT WE DO</span></div><div className="line-rule" data-line/></div>
-          <div className="section-top-row"><h2 className="display-heading" data-reveal>BUKAN SEKADAR<br/><span className="accent">BELAJAR.</span></h2><div className="section-top-aside" data-reveal><p>Ruang untuk tumbuh melalui program dan pengalaman belajar yang relevan dengan kebutuhan masa depan.</p><div className="drag-indicator"><MousePointer2 size={17}/> SCROLL / DRAG TO EXPLORE</div></div></div>
-        </div>
-        <div className="cards-track" ref={trackRef} aria-label="Daftar program pelatihan, bisa digeser horizontal">
-          {content.programs.map((program, index) => (
-            <article className="program-card tilt-card" key={program.id} data-cursor="EXPLORE">
-              <div className="program-image"><img src={program.image_url || "/hero-grid.svg"} alt={`Ilustrasi ${program.title}`} loading="lazy"/><div className="program-image-overlay"/></div>
-              <div className="card-upper"><span>{String(index+1).padStart(2,"0")} / {String(content.programs.length).padStart(2,"0")}</span><MoveUpRight size={19}/></div>
-              <div className="card-lower"><div className="card-category"><span className="live-dot"/>{program.category}</div><h3>{program.title}</h3><p>{program.description}</p><div className="card-footer">{program.duration}<ArrowUpRight size={17}/></div></div>
-              <div className="tilt-shine"/>
-            </article>
+      <div className="sector-ticker" aria-label="Bidang pekerjaan">
+        <div className="sector-ticker__label"><span className="ticker-dot" /> BIDANG KERJA</div>
+        <div className="sector-ticker__viewport"><div className="sector-ticker__track">
+          {Array.from({ length: 2 }).map((_, index) => (
+            <span className="sector-ticker__set" key={index}>HOSPITALITY <b>✳</b> MANUFACTURING <b>✳</b> ELECTRICAL <b>✳</b> WAREHOUSE <b>✳</b> CONSTRUCTION <b>✳</b> WELDING <b>✳</b></span>
           ))}
-          <div className="end-card"><span>KEEP EXPLORING</span><strong>YOUR NEXT<br/>CHAPTER<br/><i>STARTS HERE.</i></strong><ArrowRight size={34}/></div>
+        </div></div>
+        <span className="sector-ticker__hint">EXPLORE YOUR SKILLS</span>
+      </div>
+
+      <section className="group-strip" aria-label="Ekosistem perusahaan">
+        <div className="container group-strip__inner">
+          <span className="group-strip__eyebrow">EKOSISTEM GRUP</span>
+          <div className="group-logo group-logo--primary"><span className="group-logo__mark">SG</span><span>Sinergi Global<small>Recruitment & Career</small></span></div>
+          <div className="group-divider" />
+          <div className="group-logo"><span className="group-logo__initial">SC</span><span>PT Sinergi<small>Corpora Group</small></span></div>
+          <div className="group-divider" />
+          <div className="group-logo"><span className="group-logo__initial">JI</span><span>Java Indo<small>Corpora</small></span></div>
+          <span className="group-strip__note">Logo teks sementara · aset resmi menyusul</span>
         </div>
-        <div className="container track-bottom"><span>GESTURE INTERACTIVE</span><div className="track-arrow-group"><button type="button" onClick={() => trackRef.current?.scrollBy({left:-390,behavior:"smooth"})} aria-label="Geser program ke kiri"><ArrowLeft size={20}/></button><button type="button" onClick={() => trackRef.current?.scrollBy({left:390,behavior:"smooth"})} aria-label="Geser program ke kanan"><ArrowRight size={20}/></button></div></div>
       </section>
 
-      <section className="statement-section"><div className="statement-glow"/><div className="container statement-inner"><span className="tiny-label" data-reveal>THE SYNERGY PHILOSOPHY</span><h2 data-reveal>EVERY SKILL<br/>IS A <em>NEW</em> <span>BEGINNING.</span></h2><div className="statement-foot" data-reveal><span>GROW BEYOND LIMITS</span><span>✳ &nbsp; 03 / 06</span></div></div></section>
-
-      <section className="journey section-pad container" id="perjalanan"><div className="section-head" data-reveal><div className="section-overline"><span>03 — PENDEKATAN KAMI</span><span className="overline-right">HOW WE MOVE FORWARD</span></div><div className="line-rule" data-line/></div>
-        <div className="journey-header"><h2 className="display-heading" data-reveal>SETIAP LANGKAH<br/><span className="accent">BERARTI.</span></h2><p data-reveal>Perjalanan pembelajaran dirancang untuk membantu peserta bergerak dari potensi menuju kesiapan yang lebih baik.</p></div>
-        <div className="journey-steps">{steps.map(step => <div className="step" key={step.num} data-reveal><span className="step-number">{step.num}</span><div className="step-body"><h3>{step.title}</h3><p>{step.body}</p></div><ArrowDownRight size={28} strokeWidth={1.3}/></div>)}</div>
+      <section className="about-section section-space" id="tentang">
+        <div className="container">
+          <div className="section-kicker reveal"><span>01</span><span className="section-kicker__line" /> TENTANG SINERGI GLOBAL <span className="section-kicker__right">CAREER WITH PURPOSE</span></div>
+          <div className="about-grid">
+            <div className="about-heading reveal">
+              <h2 className="display-title">JALAN MENUJU<br /><span>KARIER GLOBAL.</span></h2>
+              <div className="about-badge"><Globe size={22} /><span>INDONESIA <b>↗</b> GLOBAL</span></div>
+            </div>
+            <div className="about-copy reveal">
+              <p className="lead-copy">Kami hadir untuk membantu calon pekerja mengenali peluang kerja internasional dan memahami langkah persiapan yang dibutuhkan.</p>
+              <p>Sinergi Global merupakan brand dalam ekosistem PT Sinergi Corpora Group. Informasi perusahaan, legalitas, posisi yang tersedia, serta tahapan rekrutmen akan ditampilkan berdasarkan data resmi yang sudah diverifikasi.</p>
+              <a className="text-link" href="#proses">Kenali alur proses <ArrowUpRight size={17} /></a>
+            </div>
+          </div>
+          <div className="about-values">
+            <article className="value-card reveal"><span className="value-card__icon"><ShieldCheck size={21} /></span><span className="value-card__number">01 / TRANSPARAN</span><h3>Informasi yang jelas</h3><p>Ruang untuk menjelaskan persyaratan, tahapan, dan informasi penting secara terbuka.</p></article>
+            <article className="value-card reveal"><span className="value-card__icon"><Users size={21} /></span><span className="value-card__number">02 / TERARAH</span><h3>Persiapan kandidat</h3><p>Membantu kandidat memahami kesiapan dokumen, keterampilan, dan kebutuhan posisi.</p></article>
+            <article className="value-card reveal"><span className="value-card__icon"><Globe size={21} /></span><span className="value-card__number">03 / GLOBAL</span><h3>Peluang lintas negara</h3><p>Informasi bidang kerja dan negara tujuan disusun sesuai peluang yang terkonfirmasi.</p></article>
+          </div>
+        </div>
       </section>
 
-      <section className="gallery-section" id="galeri"><div className="container"><div className="section-head" data-reveal><div className="section-overline"><span>04 — GALERI KEGIATAN</span><span className="overline-right">MOMENTS THAT MATTER</span></div><div className="line-rule" data-line/></div><div className="gallery-heading"><h2 className="display-heading" data-reveal>MOMEN KECIL.<br/><span className="accent">DAMPAK BESAR.</span></h2><p data-reveal>Setiap langkah layak diceritakan. Galeri ini masih menggunakan foto ilustrasi dan akan diganti dengan dokumentasi resmi LPK.</p></div></div>
-        <div className="gallery-grid container" data-reveal>{content.gallery.map((item, index) => <div className="gallery-card" key={item.id} data-cursor="VIEW"><img src={item.image_url || "/hero-grid.svg"} alt={`Ilustrasi ${item.title}`} loading="lazy"/><div className="gallery-shade"/><span className="gallery-index">0{index + 1}</span><div className="gallery-caption"><small>{item.category}</small><h3>{item.title}</h3></div><div className="gallery-cross">+</div></div>)}</div>
+      <section className="work-section section-space" id="bidang">
+        <div className="container">
+          <div className="section-kicker reveal"><span>02</span><span className="section-kicker__line" /> BIDANG PEKERJAAN <span className="section-kicker__right">SKILLS MEET OPPORTUNITY</span></div>
+          <div className="section-heading-row">
+            <h2 className="display-title reveal">KETERAMPILAN<br /><span>PUNYA ARAH.</span></h2>
+            <p className="section-intro reveal">Jelajahi bidang yang relevan dengan pengalaman dan keterampilan Anda. Daftar ini adalah kategori awal untuk desain dan dapat disesuaikan dengan kebutuhan resmi perusahaan.</p>
+          </div>
+          <div className="work-grid">
+            {workAreas.map((area) => {
+              const Icon = area.icon;
+              return (
+                <a className="work-card reveal" href="#peluang" key={area.name} onClick={() => setCategoryFilter(area.name)}>
+                  <div className="work-card__top"><span>{area.number}</span><ArrowUpRight size={18} /></div>
+                  <div className="work-card__icon"><Icon size={25} strokeWidth={1.7} /></div>
+                  <h3>{area.name}</h3>
+                  <p>{area.detail}</p>
+                  <span className="work-card__link">Lihat posisi <ArrowRight size={15} /></span>
+                </a>
+              );
+            })}
+          </div>
+        </div>
       </section>
 
-      <section className="contact-section" id="hubungi"><div className="contact-backdrop"/><div className="container contact-content"><div className="section-head" data-reveal><div className="section-overline"><span>05 — HUBUNGI KAMI</span><span className="overline-right">LET'S BUILD YOUR NEXT STEP</span></div><div className="line-rule" data-line/></div><div className="contact-main"><span className="tiny-label" data-reveal>YOUR JOURNEY STARTS HERE.</span><h2 data-reveal>WAKTUNYA<br/><em>MELANGKAH.</em></h2><div className="contact-action" data-reveal>{whatsAppUrl ? arrowLink(whatsAppUrl, "MULAI PERCAKAPAN", "pill-button pill-primary") : <span className="contact-awaiting">Informasi WhatsApp resmi segera tersedia.</span>}{email ? <a className="contact-email" href={`mailto:${email}`}>{email}</a> : <span className="contact-email">Kontak resmi akan dilengkapi.</span>}</div></div></div></section>
+      <section className="jobs-section section-space" id="peluang">
+        <div className="container">
+          <div className="section-kicker reveal"><span>03</span><span className="section-kicker__line" /> JELAJAHI POSISI <span className="section-kicker__right">FIND YOUR NEXT STEP</span></div>
+          <div className="section-heading-row jobs-heading">
+            <div><h2 className="display-title reveal">CARI PELUANG<br /><span>ANDA.</span></h2><p className="jobs-disclaimer reveal"><BadgeCheck size={17} /> Contoh data untuk pratinjau. Ini bukan daftar lowongan aktif.</p></div>
+            <p className="section-intro reveal">Cari berdasarkan kata kunci, negara, atau bidang pekerjaan. Daftar ini nantinya akan terhubung dengan data posisi yang telah disetujui perusahaan.</p>
+          </div>
+          <div className="job-search reveal">
+            <label className="job-search__keyword"><Search size={20} /><span className="sr-only">Cari posisi</span><input value={searchTerm} onChange={(event) => setSearchTerm(event.target.value)} placeholder="Cari posisi, keterampilan, atau negara..." /></label>
+            <label className="job-search__select"><MapPin size={18} /><span className="sr-only">Filter negara</span><select value={countryFilter} onChange={(event) => setCountryFilter(event.target.value)}><option>Semua negara</option>{countries.map((country) => <option key={country.name}>{country.name}</option>)}</select><ChevronDown size={15} /></label>
+            <label className="job-search__select"><Briefcase size={18} /><span className="sr-only">Filter bidang</span><select value={categoryFilter} onChange={(event) => setCategoryFilter(event.target.value)}><option>Semua bidang</option>{workAreas.map((area) => <option key={area.name}>{area.name}</option>)}</select><ChevronDown size={15} /></label>
+            <button className="button button--navy job-search__button" type="button" onClick={() => document.getElementById("daftar")?.scrollIntoView({ behavior: "smooth" })}>Daftar minat <ArrowUpRight size={17} /></button>
+          </div>
+          <div className="job-results-meta"><span>{filteredJobs.length} contoh posisi</span><span>DATA ILUSTRASI · PERLU KONFIRMASI</span></div>
+          {filteredJobs.length > 0 ? (
+            <div className="jobs-grid">
+              {filteredJobs.map((job, index) => (
+                <article className="job-card reveal" key={job.id}>
+                  <div className="job-card__image"><SafeMediaImage src={job.image} alt={"Ilustrasi bidang " + job.category} /><span className="job-card__flag">{job.flag} {job.country}</span><span className="job-card__sample">CONTOH</span></div>
+                  <div className="job-card__body">
+                    <span className="job-card__category">{job.category.toUpperCase()} <span>·</span> POSISI {String(index + 1).padStart(2, "0")}</span>
+                    <h3>{job.title}</h3>
+                    <p>{job.summary}</p>
+                    <div className="job-card__footer"><span><MapPin size={14} /> {job.country}</span><button type="button" onClick={() => chooseJob(job)}>Pilih posisi <ArrowUpRight size={16} /></button></div>
+                  </div>
+                </article>
+              ))}
+            </div>
+          ) : (
+            <div className="empty-results"><Search size={26} /><h3>Belum ada contoh yang cocok</h3><p>Coba kata kunci atau filter lain untuk melihat contoh posisi.</p><button type="button" className="text-link" onClick={() => { setSearchTerm(""); setCountryFilter("Semua negara"); setCategoryFilter("Semua bidang"); }}>Reset pencarian <ArrowRight size={16} /></button></div>
+          )}
+        </div>
+      </section>
 
-      <footer className="site-footer"><div className="container"><div className="footer-main"><a className="footer-logo" href="#atas">SYNERGY<span>.</span><small>INDO CORPORA</small></a><p>Lembaga pelatihan kerja yang berorientasi pada pengembangan kompetensi dan kesiapan masa depan.</p><div className="footer-address">{content.site.contact_address}</div></div><div className="footer-bottom"><span>© {new Date().getFullYear()} SYNERGY INDO CORPORA.</span><span>CRAFTED WITH PURPOSE <b>·</b> <strong>BY KASTRIVA</strong></span><a href="#atas" data-cursor="TOP">BACK TO TOP ↑</a></div></div></footer>
-      {content.source === "demo" && <div className="demo-flag" role="note">DEMO CONTENT — GANTI DENGAN DATA RESMI LPK</div>}
+      <section className="countries-section section-space" id="negara">
+        <div className="container countries-layout">
+          <div className="countries-copy">
+            <div className="section-kicker section-kicker--light reveal"><span>04</span><span className="section-kicker__line" /> NEGARA TUJUAN</div>
+            <h2 className="display-title reveal">LANGKAH ANDA.<br /><span>CAKRAWALA BARU.</span></h2>
+            <p className="reveal">Negara di bawah ini merupakan contoh untuk rancangan pencarian. Tujuan, kuota, persyaratan, dan posisi yang benar-benar tersedia harus dikonfirmasi sebelum publikasi.</p>
+            <a className="button button--lime reveal" href="#peluang">Lihat contoh posisi <ArrowRight size={17} /></a>
+          </div>
+          <div className="country-list">
+            {countries.map((country, index) => (
+              <button className="country-row reveal" type="button" key={country.name} onClick={() => { setCountryFilter(country.name); document.getElementById("peluang")?.scrollIntoView({ behavior: "smooth" }); }}>
+                <span className="country-row__index">0{index + 1}</span><span className="country-row__flag" aria-hidden="true">{country.flag}</span><span className="country-row__name">{country.name}<small>{country.note}</small></span><ArrowUpRight size={19} />
+              </button>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="process-section section-space" id="proses">
+        <div className="container">
+          <div className="section-kicker reveal"><span>05</span><span className="section-kicker__line" /> ALUR PENDAFTARAN <span className="section-kicker__right">CLARITY AT EVERY STEP</span></div>
+          <div className="section-heading-row">
+            <h2 className="display-title reveal">LANGKAH YANG<br /><span>LEBIH TERARAH.</span></h2>
+            <p className="section-intro reveal">Gambaran umum untuk membantu kandidat memahami alur. Proses sebenarnya akan mengikuti prosedur dan ketentuan resmi perusahaan.</p>
+          </div>
+          <div className="process-list">
+            {processSteps.map((step) => (
+              <article className="process-row reveal" key={step.number}>
+                <span className="process-row__number">{step.number}</span><div><h3>{step.title}</h3><p>{step.body}</p></div><ArrowDownRight size={23} />
+              </article>
+            ))}
+          </div>
+          <div className="process-note reveal"><ShieldCheck size={20} /><p><strong>Informasi penting:</strong> persyaratan, biaya, kontrak, visa, dan status pekerjaan harus dijelaskan melalui kanal resmi sebelum kandidat mengambil keputusan.</p></div>
+        </div>
+      </section>
+
+      <section className="ceo-section">
+        <div className="container ceo-layout">
+          <div className="ceo-media reveal">
+            <SafeMediaImage src="https://images.unsplash.com/photo-1521737711867-e3b97375f902?auto=format&fit=crop&w=1400&q=85" alt="Ilustrasi suasana kerja profesional" loading="lazy" />
+            <div className="ceo-media__overlay" />
+            <div className="ceo-media__label"><span className="ticker-dot" /> PESAN DARI PIMPINAN</div>
+            <button className="ceo-play" type="button" aria-label="Pratinjau video perkenalan CEO" onClick={() => setVideoNotice("Slot video sudah disiapkan. Tambahkan video resmi CEO berdurasi sekitar 15–30 detik sebelum website diluncurkan.")}><Play size={24} fill="currentColor" /></button>
+            <span className="ceo-media__duration">VIDEO PROFIL · 15–30 DETIK</span>
+          </div>
+          <div className="ceo-copy">
+            <div className="section-kicker reveal"><span>06</span><span className="section-kicker__line" /> SAMBUTAN PIMPINAN</div>
+            <h2 className="display-title reveal">MELANGKAH<br /><span>DENGAN YAKIN.</span></h2>
+            <p className="lead-copy reveal">Perkenalan singkat dari pimpinan akan membantu pengunjung mengenal visi, nilai, dan komitmen perusahaan secara langsung.</p>
+            <p className="reveal">Bagian ini disiapkan untuk video resmi berdurasi 15–30 detik. Nama pimpinan, naskah, dan video akan dimasukkan setelah materi dari perusahaan diterima.</p>
+            {videoNotice && <p className="inline-notice" role="status">{videoNotice}</p>}
+            <button className="text-link text-link--button reveal" type="button" onClick={() => setVideoNotice("Video profil belum ditambahkan. Kirim file video resmi dan persetujuan publikasi untuk melengkapi bagian ini.")}>Siapkan video profil <ArrowUpRight size={17} /></button>
+          </div>
+        </div>
+      </section>
+
+      <section className="news-section section-space" id="berita">
+        <div className="container">
+          <div className="section-kicker reveal"><span>07</span><span className="section-kicker__line" /> KABAR & PANDUAN <span className="section-kicker__right">KNOW BEFORE YOU GO</span></div>
+          <div className="section-heading-row">
+            <h2 className="display-title reveal">BEKAL INFORMASI.<br /><span>LANGKAH LEBIH SIAP.</span></h2>
+            <p className="section-intro reveal">Ruang untuk berita perusahaan, panduan kandidat, dan informasi terbaru. Artikel di bawah adalah contoh tampilan, bukan publikasi resmi.</p>
+          </div>
+          <div className="news-grid">
+            {articles.map((article, index) => (
+              <article className="news-card reveal" key={article.title}>
+                <div className="news-card__image"><SafeMediaImage src={article.image} alt={"Ilustrasi artikel " + article.title} /><span>0{index + 1}</span></div>
+                <div className="news-card__meta"><span>{article.category}</span><span>{article.readTime}</span></div>
+                <h3>{article.title}</h3>
+                <button type="button" className="text-link text-link--button" onClick={() => setArticleNotice("Artikel ini masih berupa contoh desain. Konten berita dan pencatatan kunjungan akan dihubungkan setelah CMS berita disiapkan.")}>Lihat artikel <ArrowUpRight size={16} /></button>
+              </article>
+            ))}
+          </div>
+          {articleNotice && <p className="inline-notice news-notice" role="status">{articleNotice}</p>}
+        </div>
+      </section>
+
+      <section className="registration-section section-space" id="daftar">
+        <div className="container registration-layout">
+          <div className="registration-copy">
+            <div className="section-kicker section-kicker--light reveal"><span>08</span><span className="section-kicker__line" /> FORM MINAT KANDIDAT</div>
+            <h2 className="display-title reveal">MULAI DARI<br /><span>LANGKAH PERTAMA.</span></h2>
+            <p className="reveal">Pendaftaran kandidat belum dibuka. Formulir dan unggah CV dinonaktifkan sampai backend, konten resmi, dan pemberitahuan privasi disetujui. Tidak ada data yang dikirim atau disimpan.</p>
+            <div className="registration-points reveal"><span><CheckCircle2 size={17} /> Informasi kandidat</span><span><CheckCircle2 size={17} /> Bidang dan negara tujuan</span><span><CheckCircle2 size={17} /> CV belum diterima</span></div>
+            <div className="registration-security reveal"><ShieldCheck size={20} /><span>Data pribadi dan CV harus diproses dengan izin, penyimpanan aman, serta pemberitahuan privasi yang jelas sebelum formulir diaktifkan.</span></div>
+          </div>
+          <form className="registration-form reveal" onSubmit={submitInterest}>
+            <div className="registration-form__head"><span>PENDAFTARAN BELUM DIBUKA</span><span>INFORMASI / 01</span></div>
+            <div className="form-field"><label htmlFor="candidate-name">Nama lengkap</label><input id="candidate-name" name="name" autoComplete="name" required disabled placeholder="Pendaftaran belum dibuka" /></div>
+            <div className="form-row">
+              <div className="form-field"><label htmlFor="candidate-phone">Nomor WhatsApp</label><input id="candidate-phone" name="phone" type="tel" autoComplete="tel" required disabled placeholder="Pendaftaran belum dibuka" /></div>
+              <div className="form-field"><label htmlFor="candidate-email">Email</label><input id="candidate-email" name="email" type="email" autoComplete="email" disabled placeholder="Pendaftaran belum dibuka" /></div>
+            </div>
+            <div className="form-row">
+              <div className="form-field"><label htmlFor="candidate-country">Negara tujuan</label><select id="candidate-country" name="country" value={targetCountry} onChange={(event) => setTargetCountry(event.target.value)} required disabled>{countries.map((country) => <option key={country.name} value={country.name}>{country.flag} {country.name}</option>)}</select></div>
+              <div className="form-field"><label htmlFor="candidate-position">Bidang / posisi</label><select id="candidate-position" name="position" value={selectedPosition} onChange={(event) => setSelectedPosition(event.target.value)} required disabled><option value="">Pilih contoh posisi</option>{jobSamples.map((job) => <option key={job.id} value={job.title}>{job.title}</option>)}</select></div>
+            </div>
+            <div className="form-field"><label htmlFor="candidate-cv">Unggah CV <span>PDF / DOC / DOCX · Maks. 5 MB</span></label><label className="file-drop" htmlFor="candidate-cv"><UploadCloud size={23} /><strong>{cvName || "Pilih file CV Anda"}</strong><small>Unggah CV belum tersedia</small><input id="candidate-cv" name="cv" type="file" disabled accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document" required onChange={(event) => { const file = event.currentTarget.files?.[0]; if (!file) { setCvName(""); return; } if (file.size > 5 * 1024 * 1024) { setFormMessage("Ukuran file melebihi 5 MB. Pilih CV yang lebih kecil."); event.currentTarget.value = ""; setCvName(""); return; } setCvName(file.name); setFormMessage(""); }} /></label></div>
+            <label className="consent-check"><input type="checkbox" required disabled /><span>Pemberitahuan privasi resmi belum disetujui; formulir belum dapat digunakan.</span></label>
+            <button className="button button--lime registration-submit" type="submit" disabled>Pendaftaran belum dibuka <ArrowRight size={18} /></button>
+            {formMessage && <p className="form-message" role="status">{formMessage}</p>}
+            <p className="form-footnote"><ShieldCheck size={14} /> Jangan unggah CV asli sebelum sistem penyimpanan dan kebijakan privasi resmi tersedia.</p>
+          </form>
+        </div>
+      </section>
+
+      <section className="contact-section section-space" id="kontak">
+        <div className="container contact-layout">
+          <div><div className="section-kicker reveal"><span>09</span><span className="section-kicker__line" /> HUBUNGI SINERGI GLOBAL</div><h2 className="display-title reveal">TERHUBUNG.<br /><span>SIAP MELANGKAH.</span></h2></div>
+          <div className="contact-card reveal">
+            <p>Untuk pertanyaan resmi, gunakan kontak perusahaan yang sudah diverifikasi.</p>
+            {whatsAppUrl ? <a href={whatsAppUrl} target="_blank" rel="noreferrer" className="contact-item"><span><Globe size={18} /></span><div><small>WHATSAPP RESMI</small><strong>Mulai percakapan</strong></div><ArrowUpRight size={17} /></a> : <div className="contact-item contact-item--muted"><span><Globe size={18} /></span><div><small>WHATSAPP</small><strong>Kontak resmi menyusul</strong></div></div>}
+            {email ? <a href={"mailto:" + email} className="contact-item"><span><Mail size={18} /></span><div><small>EMAIL</small><strong>{email}</strong></div><ArrowUpRight size={17} /></a> : <div className="contact-item contact-item--muted"><span><Mail size={18} /></span><div><small>EMAIL</small><strong>Alamat email menyusul</strong></div></div>}
+            <div className="contact-item contact-item--muted"><span><MapPin size={18} /></span><div><small>ALAMAT</small><strong>{address || "Alamat resmi menyusul"}</strong></div></div>
+          </div>
+        </div>
+      </section>
+
+      <footer className="site-footer">
+        <div className="container">
+          <div className="footer-main">
+            <a className="sg-brand sg-brand--footer" href="#top"><span className="sg-brand__mark">SG<span>.</span></span><span className="sg-brand__name">SINERGI GLOBAL<small>CAREER OPPORTUNITIES</small></span></a>
+            <p>Menghubungkan keterampilan, persiapan, dan informasi peluang karier internasional dengan lebih terarah.</p>
+            <div className="footer-links"><span>JELAJAHI</span><a href="#bidang">Bidang kerja</a><a href="#peluang">Contoh posisi</a><a href="#proses">Alur proses</a><a href="#berita">Berita & panduan</a></div>
+            <div className="footer-social"><span>MEDIA SOSIAL</span><div><span aria-label="Instagram, tautan resmi menyusul"><Instagram size={18} /></span><span aria-label="LinkedIn, tautan resmi menyusul"><Linkedin size={18} /></span><span aria-label="Informasi grup perusahaan"><Building2 size={18} /></span></div><small>Tautan resmi menyusul</small></div>
+          </div>
+          <div className="footer-group-note">PT SINERGI CORPORA GROUP · JAVA INDO CORPORA <span>Logo dan hubungan grup perlu disesuaikan dengan aset resmi.</span></div>
+          <div className="footer-bottom"><span>© {new Date().getFullYear()} SINERGI GLOBAL. Semua hak dilindungi.</span><span>DESAIN WEBSITE · BY KASTRIVA</span><a href="#top">Kembali ke atas ↑</a></div>
+        </div>
+      </footer>
+      {content.source === "demo" && <div className="demo-status" role="note"><span className="ticker-dot" /> DATA KONTEN DEMO</div>}
     </main>
   );
 }
