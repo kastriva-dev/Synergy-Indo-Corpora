@@ -34,6 +34,8 @@
 
 Setelah perubahan source ini disetujui di GitHub, pemilik akun perusahaan perlu menyalin file gas/Code.gs ke project GAS publik, lalu memilih Deploy → Manage deployments → Edit → New version → Deploy. Jalankan setupSynergySpreadsheet() dari project GAS yang terhubung ke Google Sheets agar tab jobs dibuat jika belum ada. Fungsi setup tidak menimpa tab existing. Salin juga file gas/AdminCode.gs ke project GAS admin privat dan deploy versi baru agar aksi read_content dan upsert_job tersedia. URL /exec dan secret yang sudah dipakai tetap dijaga; jangan menaruh secret di GitHub. Perubahan source GitHub tidak otomatis mengubah deployment GAS.
 
+**Penting — Script Properties GAS admin terpisah:** Pada project GAS admin privat (misalnya `SYNERGY_ADMIN_API_PRIVATE`), buka **Project Settings → Script Properties** dan pastikan `SYNERGY_SPREADSHEET_ID` berisi ID spreadsheet perusahaan yang sama serta `SYNERGY_ADMIN_SECRET` berisi secret acak minimal 32 karakter (disarankan 64+). Nilai `SYNERGY_ADMIN_SECRET` harus sama persis dengan environment variable `GAS_ADMIN_SECRET` pada Vercel. Di Vercel, `GAS_ADMIN_WEB_APP_URL` harus menunjuk ke URL `/exec` deployment GAS admin privat. Script Properties dari project GAS publik tidak otomatis tersedia pada project admin yang terpisah. Jangan pernah memasukkan secret ke GitHub, dokumentasi publik, atau frontend.
+
 ## Keamanan dan biaya
 - Jangan mengaktifkan `Share → Anyone with link` untuk Google Sheets itu sendiri. Yang publik hanyalah API konten terpilih.
 - Jangan simpan password, akses admin, PIN, atau data sensitif pada tab `site`, `programs`, `gallery`.

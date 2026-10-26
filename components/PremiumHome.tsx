@@ -261,6 +261,7 @@ export default function PremiumHome({ content }: { content: PublicContent }) {
   function chooseJob(job: JobListing) {
     setSelectedPosition(job.title);
     setTargetCountry(job.country);
+    setFormMessage(`Pendaftaran belum dibuka. Posisi ${job.title} di ${job.country} hanya untuk informasi; pilihan ini tidak mengirim data atau CV.`);
     document.getElementById("daftar")?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
@@ -419,7 +420,7 @@ export default function PremiumHome({ content }: { content: PublicContent }) {
             <label className="job-search__keyword"><Search size={20} /><span className="sr-only">Cari posisi</span><input value={searchTerm} onChange={(event) => setSearchTerm(event.target.value)} placeholder="Cari posisi, keterampilan, atau negara..." /></label>
             <label className="job-search__select"><MapPin size={18} /><span className="sr-only">Filter negara</span><select value={countryFilter} onChange={(event) => setCountryFilter(event.target.value)}><option>Semua negara</option>{countries.map((country) => <option key={country.name}>{country.name}</option>)}</select><ChevronDown size={15} /></label>
             <label className="job-search__select"><Briefcase size={18} /><span className="sr-only">Filter bidang</span><select value={categoryFilter} onChange={(event) => setCategoryFilter(event.target.value)}><option>Semua bidang</option>{workAreas.map((area) => <option key={area.name}>{area.name}</option>)}</select><ChevronDown size={15} /></label>
-            <button className="button button--navy job-search__button" type="button" onClick={() => document.getElementById("daftar")?.scrollIntoView({ behavior: "smooth" })}>Daftar minat <ArrowUpRight size={17} /></button>
+            <button className="button button--navy job-search__button" type="button" onClick={() => { setFormMessage("Pendaftaran kandidat belum dibuka. Saat ini Anda dapat melihat lowongan, tetapi belum bisa mengirim minat atau CV."); document.getElementById("daftar")?.scrollIntoView({ behavior: "smooth", block: "start" }); }}>Status pendaftaran <ArrowUpRight size={17} /></button>
           </div>
           <div className="job-results-meta"><span>{filteredJobs.length} {content.source === "demo" ? "contoh posisi" : "lowongan terbit"}</span><span>{content.source === "demo" ? "DATA ILUSTRASI · PERLU KONFIRMASI" : "DATA CMS · STATUS PUBLIK"}</span></div>
           {filteredJobs.length > 0 ? (
